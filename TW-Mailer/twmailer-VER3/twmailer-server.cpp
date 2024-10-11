@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <utility>
-
+#include <cmath>
 struct TextPreset
 {
     int packageNUM;
@@ -18,45 +18,22 @@ struct TextPreset
     std::string sender;
     std::string subject;
     std::string text;
+    bool error;
+    int ID;
+    std::string username;
 };
-
-void sendToClient(int clientSocket, const char *message)
-{
-    send(clientSocket, message, strlen(message), 0);
-}
-
-void SENDmessageRecv(char buffer[4096])
-{
-    char *pch;
-    pch = strtok(buffer, ":");
-    while (pch != NULL)
-    {
-        std::cout << pch << std::endl;
-        pch = strtok(NULL, ":");
-    }
-}
-
-std::pair<std::string, std::vector<std::string>::size_type> READmessagRecv(const std::string &message)
-{
-    size_t firstColon = message.find(':');
-    size_t secondColon = message.find(':', firstColon + 1);
-
-    std::string username = message.substr(firstColon + 1, secondColon - firstColon - 1);
-    std::vector<std::string>::size_type messageNumber = std::stoul(message.substr(secondColon + 1));
-
-    return std::make_pair(username, messageNumber);
-}
 
 struct TextPreset handleSEND(struct TextPreset tp, int clientSocket)
 {
-
-    char buffer[4096] = {0};
+    char buffer[1024] = {0};
     int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[errRecv] = '\n';
+    tp.error = false;
 
     if (errRecv == -1)
     {
         std::cout << "Error in parse" << std::endl;
+        tp.error = true;
         return tp;
     }
 
@@ -91,7 +68,8 @@ struct TextPreset handleSEND(struct TextPreset tp, int clientSocket)
         {
             tp.subject = parseMessVect[i];
         }
-        if(i > 2){
+        if (i > 2)
+        {
             tp.text += parseMessVect[i];
         }
     }
@@ -103,10 +81,9 @@ struct TextPreset handleSEND(struct TextPreset tp, int clientSocket)
 
         do
         {
-            char tempBuffer[4096] = {0};
+            char tempBuffer[1024] = {0};
             int tempErrRecv = recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
             tempBuffer[tempErrRecv] = '\n';
-
             std::string tempParseMessage(buffer);
             std::vector<std::string> tempParseMessVect;
             std::string tempTempMess = "";
@@ -131,27 +108,111 @@ struct TextPreset handleSEND(struct TextPreset tp, int clientSocket)
 
             j--;
 
-        } while (j > 1);
+        } while (j >= 1);
+    }
+    else
+    {
+        char tempBuffer[1024] = {0};
+        int tempErrRecv = recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
+        tempBuffer[tempErrRecv] = '\n';
+        std::string tempParseMessage(buffer);
+        std::vector<std::string> tempParseMessVect;
+        std::string tempTempMess = "";
+
+        for (long unsigned int i = 0; i < tempParseMessage.size(); i++)
+        {
+            if (tempParseMessage[i] == '\n')
+            {
+                tempParseMessVect.push_back(tempTempMess);
+                tempTempMess.clear();
+            }
+            else
+            {
+                tempTempMess += tempParseMessage[i];
+            }
+        }
+
+        for (long unsigned int i = 0; i < tempParseMessVect.size(); i++)
+        {
+            tp.text += tempParseMessVect[i];
+        }
     }
 
-    std::cout << "argument: " << tp.argument << " sender: " << tp.sender << " subject: " << tp.subject << std::endl;
-    std::cout << "text: " << tp.text << std::endl;
-
+    tp.error = false;
     return tp;
 }
 
-int recvFromClient(int clientSocket)
+struct TextPreset handleLIST(std::vector<struct TextPreset> &savedMsg, int clientSocket)
 {
-    char buffer[4096] = {0}; // Puffer initialisieren und leeren
-    int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
-    buffer[errRecv] = '\0';
-    if (errRecv == -1)
-    {
-        std::cout << "Recv error" << std::endl;
-        return 0;
-    }
 
     struct TextPreset tp;
+
+    char buffer[1024] = {0};
+    int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRecv] = '\n';
+    tp.error = false;
+
+    if (errRecv == -1)
+    {
+        std::cout << "Error in parse" << std::endl;
+        send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+        tp.error = true;
+        return tp;
+    }
+
+    std::string LISTstring = "";
+
+    for (struct TextPreset &i : savedMsg)
+    {
+        LISTstring = LISTstring + std::to_string(i.ID) + ": " + std::to_string(i.packageNUM) + ": \n   " + i.sender + ": " + i.subject + ": " + i.text.substr(0, 10) + "... \n   " + std::to_string(i.length) + "\n";
+    }
+
+    LISTstring += "END\n";
+
+    double roundErr = 0;
+
+    tp.length = LISTstring.size();
+    tp.type = 3;
+    tp.delim = '\n';
+    tp.packageNUM = 1;
+
+    if (LISTstring.size() > 1023)
+    {
+        roundErr = LISTstring.size() / 1024;
+        tp.packageNUM = std::ceil(roundErr);
+        std::string infoString = "";
+        infoString = std::to_string(tp.packageNUM) + '\n' + tp.delim + '\n' + std::to_string(tp.length) + '\n' + std::to_string(tp.type) + '\n';
+        send(clientSocket, infoString.c_str(), infoString.size(), 0);
+
+        std::string clippedString = "";
+
+        int i = 1;
+        do
+        {
+
+            int startIndex = (i - 1) * 1023;
+            int endIndex = std::min(startIndex + 1023, tp.length);
+
+            clippedString = LISTstring.substr(startIndex, endIndex - startIndex);
+
+            send(clientSocket, clippedString.c_str(), clippedString.size(), 0);
+
+            i++;
+        } while (i <= tp.packageNUM + 1);
+    }
+    else
+    {
+
+        std::string infoString = "";
+        infoString = std::to_string(tp.packageNUM) + '\n' + tp.delim + '\n' + std::to_string(tp.length) + '\n' + std::to_string(tp.type) + '\n';
+        send(clientSocket, infoString.c_str(), infoString.size(), 0);
+        send(clientSocket, LISTstring.c_str(), LISTstring.size(), 0);
+    }
+    return tp;
+}
+
+struct TextPreset parseInfoString(struct TextPreset tp, char buffer[1024])
+{
 
     std::string messageRecv = buffer;
     std::vector<std::string> parseMess;
@@ -168,6 +229,7 @@ int recvFromClient(int clientSocket)
             tempMESS += messageRecv[i];
         }
     }
+
     char trueDelim = '\n';
     if (parseMess.size() >= 4)
     {
@@ -186,6 +248,24 @@ int recvFromClient(int clientSocket)
         std::cerr << "Error in vector creation" << std::endl;
     }
 
+    return tp;
+}
+
+int recvFromClient(int clientSocket, std::vector<struct TextPreset> &savedMsg)
+{
+    char buffer[1024] = {0}; // Puffer initialisieren und leeren
+    int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRecv] = '\0';
+    if (errRecv == -1)
+    {
+        std::cout << "Recv error" << std::endl;
+        return 0;
+    }
+
+    struct TextPreset tp;
+
+    tp = parseInfoString(tp, buffer);
+
     switch (tp.type)
     {
     case 0:
@@ -194,13 +274,28 @@ int recvFromClient(int clientSocket)
         break;
     case 1:
         std::cout << "Client used SEND" << std::endl;
-        std::cout << "packages: " << tp.packageNUM << " length: " << tp.length << " type: " << tp.type << " delim: " << tp.delim << std::endl;
         send(clientSocket, "OK\n", sizeof("OK\n"), 0);
-        handleSEND(tp, clientSocket);
+        savedMsg.push_back(handleSEND(tp, clientSocket));
+        /*
+        if(savedMsg[savedMsg.size()].error == true){
+            std::cout << "Error during parse of Message" << std::endl;
+            std::cout << "Deleting broken Message to preserve Securitry" << std::endl;
+            send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+            savedMsg.erase(savedMsg.begin() + savedMsg.size());
+        }else{
+            send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+        }
+        */
         return 1;
         break;
     case 2:
         std::cout << "Client used READ" << std::endl;
+        return 2;
+        break;
+    case 3:
+        std::cout << "Client used LIST" << std::endl;
+        send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+        handleLIST(savedMsg, clientSocket);
         return 2;
         break;
     default:
@@ -220,7 +315,7 @@ int main(int argc, char *argv[])
         printf("error");
     }
 
-    std::vector<std::string> savedMsg;
+    std::vector<struct TextPreset> savedMsg;
 
     // Create a socket
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -277,7 +372,7 @@ int main(int argc, char *argv[])
     std::cout << "Accepted connection from " << clientIP << ":" << clientPort << std::endl;
 
     // Send data to the client
-    sendToClient(clientSocket, "Hello from Server");
+    send(clientSocket, "Hello from Server", sizeof("Hello from Server"), 0);
 
     sockaddr_in serverAddr;
     socklen_t serverAddrLen = sizeof(serverAddr);
@@ -292,7 +387,7 @@ int main(int argc, char *argv[])
 
     do
     {
-        recvFromClient(clientSocket);
+        recvFromClient(clientSocket, savedMsg);
     } while (!closeFlag);
 
     close(clientSocket);

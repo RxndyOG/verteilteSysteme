@@ -31,142 +31,203 @@ std::string convertToLowercase(const std::string &str)
     return result;
 }
 
-std::string SENDFunct()
+struct TextPreset parseInfoString(struct TextPreset tp, char buffer[1024])
 {
 
-    std::string input;
-    std::string result = "";
-
-    std::cout << "Enter Sender: ";
-    std::cin.ignore();
-    getline(std::cin, input);
-    result += ":";
-    result += input;
-
-    std::cout << "Enter Subject [MAX 80 Char]: ";
-    getline(std::cin, input);
-    input = input.substr(0, 80);
-    result += ":";
-    result += input;
-
-    std::cout << "Enter Message: " << std::endl;
-    int i = 1;
-    do
+    std::string messageRecv = buffer;
+    std::vector<std::string> parseMess;
+    std::string tempMESS;
+    for (long unsigned int i = 0; i < messageRecv.size(); i++)
     {
-        std::cout << "Line " << i << ": ";
-        getline(std::cin, input);
-        result += ":";
-        result += input;
-        i++;
-    } while (input != ".");
-
-    result += ":";
-    return result;
-}
-
-std::string READFunct()
-{
-
-    std::string input;
-    std::string result = "";
-
-    std::cout << "Enter Username: ";
-    std::cin.ignore();
-    getline(std::cin, input);
-    result += ":";
-    result += input;
-
-    std::cout << "Enter Message Number: ";
-    getline(std::cin, input);
-    result += ":";
-    result += input;
-    result += ":";
-
-    return result;
-}
-
-void SENDmessageRecv(char buffer[4096])
-{
-
-    std::string pch;
-
-    pch = buffer;
-
-    for (std::string::size_type i = 0; i < pch.length(); i++)
-    {
-        if (pch[i] == ':')
+        if (messageRecv[i] == '\n')
         {
-            std::cout << std::endl;
+            parseMess.push_back(tempMESS);
+            tempMESS.clear();
         }
         else
         {
-            std::cout << pch[i];
+            tempMESS += messageRecv[i];
         }
     }
-}
 
-void receiveFromServer(int clientSocket, bool stand)
-{
-    char buffer[1024] = {0}; // Puffer initialisieren
-    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
-
-    if (bytesReceived > 0)
+    char trueDelim = '\n';
+    if (parseMess.size() >= 4)
     {
-        if (stand == true)
+        tp.packageNUM = std::stoi(parseMess[0]);
+        tp.delim = parseMess[1];
+        tp.length = std::stoi(parseMess[2]);
+        tp.type = std::stoi(parseMess[3]);
+        if (tp.delim == "\\n")
         {
-            SENDmessageRecv(buffer);
+            trueDelim = '\n';
+            tp.delim = trueDelim;
         }
-        else
-        {
-            std::cout << "Server: " << buffer << std::endl;
-        }
-    }
-    else if (bytesReceived == 0)
-    {
-        std::cout << "Connection closed by server." << std::endl;
     }
     else
     {
-        std::cerr << "recv() failed" << std::endl;
+        std::cerr << "Error in vector creation" << std::endl;
     }
+
+    return tp;
 }
 
-int sendToServer(int clientSocket, const char *clientMessage, int *sendMSGS)
+void LISTfunct(std::string input, int clientSocket)
 {
 
-    std::string argument = "";
+    struct TextPreset tp;
+    tp.type = 3;
 
-    for (int i = 0; i < 4; i++)
+    if (input.size() > 4)
     {
-        argument += clientMessage[i];
+        std::cout << "LIST detected: Do you still wish to send the longer sentence [y, n] (You will send it as a Comment)" << std::endl;
+        char askLongSend;
+        std::cin >> askLongSend;
+        std::string TempINFO;
+        switch (askLongSend)
+        {
+        case 'y':
+        case 'Y':
+            tp.type = -1;
+            tp.packageNUM = 0;
+            tp.delim = "\\n";
+            tp.length = input.size();
+
+            double roundErr;
+
+            if (input.size() > 1024)
+            {
+                roundErr = input.size() / 1024;
+                tp.packageNUM = std::ceil(roundErr);
+            }
+            else
+            {
+                tp.packageNUM = 1;
+            }
+
+            TempINFO = std::to_string(tp.packageNUM) + '\n' + tp.delim + '\n' + std::to_string(tp.length) + '\n' + std::to_string(tp.type) + '\n';
+
+            if (TempINFO.size() > 1024)
+            {
+                std::cout << "Error String to long for info" << std::endl;
+                return;
+            }
+            else
+            {
+                send(clientSocket, TempINFO.c_str(), TempINFO.size(), 0);
+                send(clientSocket, input.c_str(), sizeof(input.c_str()), 0);
+            }
+            return;
+            break;
+        case 'n':
+        case 'N':
+            std::cout << "Not Send" << std::endl;
+            break;
+        default:
+            std::cout << "Wrong input: Not Send" << std::endl;
+            break;
+        }
     }
 
-    if (argument == "SEND") // funktioniert
-    {
-        argument += SENDFunct();
-        send(clientSocket, argument.c_str(), strlen(argument.c_str()), 0);
-        (*sendMSGS)++;
-        receiveFromServer(clientSocket, false);
-        return 2;
-    }
+    // tp.subject = subject;
+    std::string LISTstring = "";
+    LISTstring = LISTstring + "LIST" + '\n';
 
-    if (argument == "READ") // funktioniert (muss noch mehr getestet werden)
-    {
+    tp.length = LISTstring.size();
 
-        argument += READFunct();
-        send(clientSocket, argument.c_str(), strlen(argument.c_str()), 0);
-        receiveFromServer(clientSocket, false);
-        receiveFromServer(clientSocket, true);
-        return 2;
+    double roundErr;
+
+    if (LISTstring.size() > 1024)
+    {
+        roundErr = LISTstring.size() / 1024;
+        tp.packageNUM = std::ceil(roundErr);
     }
     else
     {
-        send(clientSocket, clientMessage, strlen(clientMessage), 0);
-
-        return 1;
+        tp.packageNUM = 1;
     }
+    tp.delim = "\\n";
 
-    return 1;
+    std::string infoString = "";
+    infoString = std::to_string(tp.packageNUM) + '\n' + tp.delim + '\n' + std::to_string(tp.length) + '\n' + std::to_string(tp.type) + '\n';
+
+    if (infoString.size() > 1024)
+    {
+        std::cout << "Error String to long for info" << std::endl;
+    }
+    else
+    {
+        send(clientSocket, infoString.c_str(), infoString.size(), 0);
+        char buffer[1024] = {0};
+        int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+        buffer[errRecv] = '\n';
+        if (errRecv == -1)
+        {
+            std::cout << "error happened during recv from server" << std::endl;
+        }
+        std::string OK = "OK\n";
+        std::string ERR = "ERR\n";
+        if (buffer == OK)
+        {
+            std::cout << buffer << std::endl;
+            buffer[1024] = {0};
+            errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+            buffer[errRecv] = '\n';
+            if (errRecv == -1)
+            {
+                std::cout << "error happened during parse of message from server" << std::endl;
+            }
+
+            if (buffer == ERR)
+            {
+                std::cout << buffer << std::endl;
+                return;
+            }
+            else
+            {
+                buffer[1024] = {0};
+                errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+                buffer[errRecv] = '\n';
+                if (errRecv == -1)
+                {
+                    std::cout << "error happened during parse of message from server" << std::endl;
+                }
+                tp = parseInfoString(tp, buffer);
+                if (tp.type == 3)
+                {
+                    int j = tp.packageNUM;
+
+                    if (tp.packageNUM > 1)
+                    {
+
+                        do
+                        {
+                            char tempBuffer[1024] = {0};
+                            int tempErrRecv = recv(clientSocket, tempBuffer, sizeof(tempBuffer), 0);
+                            tempBuffer[tempErrRecv] = '\n';
+                            std::string tempParseMessage(buffer);
+                            std::cout << buffer;
+                            j--;
+                        } while (j >= 1);
+                    }
+                    else
+                    {
+                        buffer[1024] = {0};
+                        errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+                        buffer[errRecv] = '\n';
+                        if (errRecv == -1)
+                        {
+                            std::cout << "error happened during parse of message from server" << std::endl;
+                        }
+                    }
+                }
+            }
+        }
+        else if (buffer == ERR)
+        {
+            std::cout << buffer << std::endl;
+            return;
+        }
+    }
 }
 
 void SENDfunct(std::string input, int clientSocket)
@@ -174,6 +235,7 @@ void SENDfunct(std::string input, int clientSocket)
 
     struct TextPreset tp;
     tp.type = 1;
+    tp.length = 0;
 
     if (input.size() > 4)
     {
@@ -192,9 +254,9 @@ void SENDfunct(std::string input, int clientSocket)
 
             double roundErr;
 
-            if (input.size() > 4096)
+            if (input.size() > 1024)
             {
-                roundErr = input.size() / 4096;
+                roundErr = input.size() / 1024;
                 tp.packageNUM = std::ceil(roundErr);
             }
             else
@@ -204,14 +266,14 @@ void SENDfunct(std::string input, int clientSocket)
 
             TempINFO = std::to_string(tp.packageNUM) + '\n' + tp.delim + '\n' + std::to_string(tp.length) + '\n' + std::to_string(tp.type) + '\n';
 
-            if (TempINFO.size() > 4096)
+            if (TempINFO.size() > 1024)
             {
                 std::cout << "Error String to long for info" << std::endl;
                 return;
             }
             else
             {
-                send(clientSocket, TempINFO.c_str(), sizeof(TempINFO.c_str()), 0);
+                send(clientSocket, TempINFO.c_str(), TempINFO.size(), 0);
                 send(clientSocket, input.c_str(), sizeof(input.c_str()), 0);
             }
 
@@ -258,15 +320,11 @@ void SENDfunct(std::string input, int clientSocket)
     {
         SENDstring = SENDstring + i + '\n';
     }
-
-    std::vector<std::string> SENDsize;
-    tp.length = SENDstring.size();
-
     double roundErr;
 
-    if (SENDstring.size() > 4096)
+    if (SENDstring.size() > 1024)
     {
-        roundErr = SENDstring.size() / 4096;
+        roundErr = SENDstring.size() / 1024;
         tp.packageNUM = std::ceil(roundErr);
     }
     else
@@ -274,30 +332,75 @@ void SENDfunct(std::string input, int clientSocket)
         tp.packageNUM = 1;
     }
     tp.delim = "\\n";
+    tp.length = SENDstring.size();
 
     std::string infoString = "";
     infoString = std::to_string(tp.packageNUM) + '\n' + tp.delim + '\n' + std::to_string(tp.length) + '\n' + std::to_string(tp.type) + '\n';
 
-    if (infoString.size() > 4096)
+    if (infoString.size() > 1024)
     {
         std::cout << "Error String to long for info" << std::endl;
     }
     else
     {
         send(clientSocket, infoString.c_str(), infoString.size(), 0);
-        char buffer[4096];
+        char buffer[1024] = {0};
         int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
         buffer[errRecv] = '\n';
-        if(errRecv == -1){
-            std::cout << "error happened during recv from server" << std:: endl;
+        if (errRecv == -1)
+        {
+            std::cout << "error happened during recv from server" << std::endl;
         }
         std::string OK = "OK\n";
         std::string ERR = "ERR\n";
-        if(buffer == OK){
-            std::cout << "OK" << std::endl;
-            send(clientSocket, SENDstring.c_str(), SENDstring.size(), 0);
-        }else if(buffer == ERR){
-            std::cout << "ERR" << std::endl;
+        if (buffer == OK)
+        {
+            std::cout << buffer << std::endl;
+            std::cout << "Send Message" << std::endl;
+
+            std::string clippedString = "";
+
+            if(tp.packageNUM > 1){
+                int i = 1;
+            do
+            {
+
+                int startIndex = (i - 1) * 1023;
+                int endIndex = std::min(startIndex + 1023, tp.length);
+
+                clippedString = SENDstring.substr(startIndex, endIndex - startIndex);
+
+                send(clientSocket, clippedString.c_str(), clippedString.size(), 0);
+
+                i++;
+            } while (i <= tp.packageNUM + 1);
+            }else{
+                send(clientSocket, SENDstring.c_str(), SENDstring.size(), 0);
+            }
+
+            
+
+            buffer[1024] = {0};
+            errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+            buffer[errRecv] = '\n';
+            if (errRecv == -1)
+            {
+                std::cout << "error happened during parse of message from server" << std::endl;
+            }
+            if (buffer == OK)
+            {
+                std::cout << buffer << std::endl;
+                std::cout << "Message recieved and saved" << std::endl;
+            }
+            else
+            {
+                std::cout << buffer << std::endl;
+                return;
+            }
+        }
+        else if (buffer == ERR)
+        {
+            std::cout << buffer << std::endl;
             return;
         }
     }
@@ -342,7 +445,13 @@ int main(int argc, char *argv[])
     std::cout << "listening on Port: " << argv[2] << std::endl;
 
     // Receive data from the serve
-    receiveFromServer(clientSocket, false);
+    char buffer[1024] = {0};
+    int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRecv] = '\n';
+    if (errRecv == -1)
+    {
+        std::cout << "error happened during recv from server" << std::endl;
+    }
     // receiveFromServer(clientSocket,false);
     // sendToServer(clientSocket, "Hello from the Client", &sendMSGS);
 
@@ -358,8 +467,6 @@ int main(int argc, char *argv[])
         // need to remove before launch
         // test if input bigger than 4 set send to block
 
-        std::cout << input.size() << std::endl;
-
         if (input.size() > 4)
         {
         }
@@ -373,6 +480,7 @@ int main(int argc, char *argv[])
         }
         else if (input.substr(0, 4) == "LIST")
         {
+            LISTfunct(input, clientSocket);
         }
         else if (input.substr(0, 3) == "DEL")
         {
