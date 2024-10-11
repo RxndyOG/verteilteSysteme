@@ -93,7 +93,7 @@ int sendINFOstring(int clientSocket, struct TextPreset tp)
 {
 
     send(clientSocket, tp.infoString.c_str(), tp.infoString.size(), 0);
-    char buffer[1024];
+    char buffer[1024] = {0};
     int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[errRCV] = '\n';
     if (errRCV == -1)
@@ -125,14 +125,14 @@ int sendMESSstring_Packages(int clientSocket, struct TextPreset tp)
 {
     std::string SENDstring = tp.argument + "\n" + tp.sender + "\n" + tp.subject + "\n" + tp.text + "\n";
     int totalLength = SENDstring.size();
-    int blockSize = _blockSIZE -1; 
+    int blockSize = _blockSIZE - 1;
     int sentBytes = 0;
 
     for (int i = 0; i < tp.packageNUM; i++)
     {
 
         int remainingBytes = totalLength - sentBytes;
-        int currentBlockSize = std::min(blockSize, remainingBytes); 
+        int currentBlockSize = std::min(blockSize, remainingBytes);
 
         std::string currentBlock = SENDstring.substr(sentBytes, currentBlockSize);
 
@@ -150,6 +150,59 @@ int sendMESSstring_Packages(int clientSocket, struct TextPreset tp)
 
     return 0;
 }
+
+void parseLIST(std::string text)
+{
+
+    std::string parseTemp = "";
+    int j = 0;
+    for (long unsigned int i = 0; i < text.size(); i++)
+    {
+        if (text[i] == '\n')
+        {
+            switch (j % 4)
+            {
+            case 0:
+                std::cout << "ID: " << parseTemp << std::endl;
+                break;
+            case 1:
+                std::cout << "SENDER: " << parseTemp << std::endl;
+                break;
+            case 2:
+                std::cout << "SUBJECT: " << parseTemp << std::endl;
+                break;
+            case 3:
+                std::cout << "TEXT (first 10): " << parseTemp << std::endl;
+                break;
+            }
+            parseTemp = "";
+            j++;
+        }
+        else
+        {
+            parseTemp += text[i];
+        }
+    }
+    
+}
+
+void recvLISTprint(int clientSocket)
+{
+    char buffer[1024] = {0};
+    int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRCV] = '\0';
+
+    if (errRCV == -1)
+    {
+        std::cout << "error in recvLISTprint" << std::endl;
+    }
+
+    parseLIST(buffer);
+
+    return;
+}
+
+
 
 int userINPUTfindOpt(int clientSocket)
 {
@@ -169,13 +222,18 @@ int userINPUTfindOpt(int clientSocket)
         {
             sendMESSstring_Packages(clientSocket, tpInput);
         }
+        return SEND;
     }
     else if (input.substr(0, 4) == "READ")
     {
+        tpInput = calcINFOstring(tpInput, READ);
     }
     else if (input.substr(0, 4) == "LIST")
     {
         tpInput = calcINFOstring(tpInput, LIST);
+        sendINFOstring(clientSocket, tpInput);
+        recvLISTprint(clientSocket);
+        return LIST;
     }
     else if (input.substr(0, 3) == "DEL")
     {
@@ -256,7 +314,7 @@ int main(int argc, char *argv[])
     do
     {
         std::cout << "\n --------- Open Terminal ----------" << std::endl;
-        std::cout << "[SEND] [READ] [DEL] [QUIT]" << std::endl;
+        std::cout << "[SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
 
         startINPUT = userINPUTfindOpt(clientSocket);
 

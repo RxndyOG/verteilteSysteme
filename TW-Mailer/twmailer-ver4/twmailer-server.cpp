@@ -8,6 +8,8 @@
 #include <utility>
 #include <cmath>
 
+int _blockSIZE = 1024;
+
 struct TextPreset
 {
     int packageNUM;
@@ -125,7 +127,7 @@ struct TextPreset parseSEND(struct TextPreset tp, std::string sendMESS)
 void initializeSENDSAVE(struct TextPreset tp, int clientSocket, std::vector<struct TextPreset> &n)
 {
 
-    char buffer[1024];
+    char buffer[1024] = {0};
     int errRcv = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[errRcv] = '\n';
 
@@ -146,7 +148,7 @@ void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket, std::ve
     int currentPackage = 1;
     while (currentPackage <= totalPackages)
     {
-        char buffer[1024]; 
+        char buffer[1024];
         int errRcv = recv(clientSocket, buffer, sizeof(buffer), 0);
 
         if (errRcv == -1)
@@ -161,15 +163,34 @@ void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket, std::ve
     tp = parseSEND(tp, completeMessage);
 
     n.push_back(tp);
-
 }
 
-void recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
+void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n)
+{
+    int totalAmmountMESS = n.size();
+
+    std::string LISTstring = "";
+
+    for (int i = 0; i < totalAmmountMESS; i++)
+    {
+
+        LISTstring = LISTstring + std::to_string(i) + "\n" + n[i].sender + "\n" + n[i].subject + "\n" + n[i].text.substr(0, 10) + "\n";
+    }
+
+    if (LISTstring.size() > static_cast<long unsigned int>(_blockSIZE - 1))
+    {
+        std::cout << "LIST zu groSS" << std::endl;
+    }
+
+    send(clientSocket, LISTstring.c_str(), LISTstring.size(), 0);
+}
+
+int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
 {
 
     struct TextPreset tpRECV;
     tpRECV = resetTP(tpRECV);
-    char buffer[1024];
+    char buffer[1024] = {0};
     int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[errRCV] = '\n';
     if (errRCV == -1)
@@ -180,8 +201,9 @@ void recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
 
     tpRECV = parseINFO(tpRECV, std::string(buffer));
 
-    if (tpRECV.type == SEND)
+    switch (tpRECV.type)
     {
+    case SEND:
         send(clientSocket, "OK\n", sizeof("OK\n"), 0);
 
         if (tpRECV.packageNUM == 1)
@@ -192,7 +214,22 @@ void recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
         {
             initializeSENDSAVE_Packages(tpRECV, clientSocket, n);
         }
+        return SEND;
+        break;
+    case READ:
+
+        break;
+    case LIST:
+        send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+        LISTsendFunct(clientSocket, n);
+        return LIST;
+        break;
+    default:
+        std::cout << "CLIENT: " << buffer << std::endl;
+        break;
     }
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -277,7 +314,7 @@ int main(int argc, char *argv[])
         recvFromClient(clientSocket, savedMSG);
 
         // test if saved to vector. it does
-        //std::cout << savedMSG[0].text << std::endl;
+        // std::cout << savedMSG[0].text << std::endl;
 
     } while (!closeFlag);
 
