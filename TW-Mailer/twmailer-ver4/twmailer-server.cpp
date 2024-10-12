@@ -432,17 +432,29 @@ void initializeDEL(struct TextPreset tp, int clientSocket, std::vector<struct Te
     }
     tp = parseREAD(tp, std::string(buffer));
 
-    if(static_cast<long unsigned int>(tp.ID) <= n.size()){
-        n.erase(n.begin() + tp.ID);
-        std::cout << "email deleted" << std::endl;
-        send(clientSocket, "OK\n", sizeof("OK\n"), 0);
-        return;
-    }else{
+    if (static_cast<long unsigned int>(tp.ID) <= n.size())
+    {
+        if (tp.username == n[tp.ID].sender)
+        {
+
+            n.erase(n.begin() + tp.ID);
+            std::cout << "email deleted" << std::endl;
+            send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+            return;
+        }
+        else
+        {
+            std::cout << "email couldnt be deleted. SENDER not correct" << std::endl;
+            send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+            return;
+        }
+    }
+    else
+    {
         std::cout << "email couldnt be deleted. ID not correct" << std::endl;
         send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
         return;
     }
-
 }
 
 int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
