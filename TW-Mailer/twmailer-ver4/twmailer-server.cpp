@@ -357,10 +357,13 @@ void initializeREAD(struct TextPreset tp, int clientSocket, std::vector<struct T
     }
     else
     {
-        tp.argument = "READ";
-        tp.sender = n[tp.ID].sender;
-        tp.subject = n[tp.ID].subject;
-        tp.text = n[tp.ID].text;
+        if (tp.username == n[tp.ID].sender)
+        {
+            tp.argument = "READ";
+            tp.sender = n[tp.ID].sender;
+            tp.subject = n[tp.ID].subject;
+            tp.text = n[tp.ID].text;
+        }
     }
 
     std::string READstring = "";
