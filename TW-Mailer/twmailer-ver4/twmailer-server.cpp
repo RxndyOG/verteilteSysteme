@@ -420,6 +420,31 @@ struct TextPreset recvLISTstring(struct TextPreset tp, int clientSocket)
     return tp;
 }
 
+void initializeDEL(struct TextPreset tp, int clientSocket, std::vector<struct TextPreset> &n)
+{
+    char buffer[1024] = {0};
+    int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRCV] = '\n';
+    if (errRCV == -1)
+    {
+        std::cout << "Error in recvLISTstring" << std::endl;
+        send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+    }
+    tp = parseREAD(tp, std::string(buffer));
+
+    if(static_cast<long unsigned int>(tp.ID) <= n.size()){
+        n.erase(n.begin() + tp.ID);
+        std::cout << "email deleted" << std::endl;
+        send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+        return;
+    }else{
+        std::cout << "email couldnt be deleted. ID not correct" << std::endl;
+        send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+        return;
+    }
+
+}
+
 int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
 {
 
@@ -475,6 +500,18 @@ int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
         tpRECV = recvLISTstring(tpRECV, clientSocket);
         LISTsendFunct(clientSocket, n, tpRECV);
         return LIST;
+        break;
+    case DEL:
+        if (n.size() <= 0)
+        {
+            send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+        }
+        else
+        {
+            send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+        }
+        initializeDEL(tpRECV, clientSocket, n);
+        return DEL;
         break;
     case QUIT:
         send(clientSocket, "OK\n", sizeof("OK\n"), 0);

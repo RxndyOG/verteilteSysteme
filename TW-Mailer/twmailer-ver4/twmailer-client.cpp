@@ -260,7 +260,8 @@ void recvLISTprint(int clientSocket)
         std::cout << "error in recvLISTprint" << std::endl;
     }
 
-    if(std::string(buffer) == "ERR\n"){
+    if (std::string(buffer) == "ERR\n")
+    {
         std::cout << "NO email with given username exists" << std::endl;
         return;
     }
@@ -413,7 +414,8 @@ void sendIPREAD(struct TextPreset tp, int clientSocket)
     send(clientSocket, READstring.c_str(), READstring.size(), 0);
 }
 
-struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp){
+struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp)
+{
 
     std::string LISTstring = "";
 
@@ -424,7 +426,8 @@ struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp){
     return tp;
 }
 
-struct TextPreset LISTinput(struct TextPreset tp){
+struct TextPreset LISTinput(struct TextPreset tp)
+{
     std::cout << "username: ";
     std::getline(std::cin, tp.username);
     return tp;
@@ -461,7 +464,6 @@ int userINPUTfindOpt(int clientSocket)
             return READ;
         }
         sendIPREAD(tpInput, clientSocket);
-
         char buffer[1024] = {0};
         int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
         buffer[errRCV] = '\n';
@@ -499,6 +501,31 @@ int userINPUTfindOpt(int clientSocket)
     }
     else if (input.substr(0, 3) == "DEL")
     {
+        tpInput = READinput(tpInput);
+        tpInput = calcINFOstring(tpInput, DEL);
+        int testLIST = sendINFOstring(clientSocket, tpInput);
+        if (testLIST == -1)
+        {
+            std::cout << "Not enough Elements to LIST" << std::endl;
+            return DEL;
+        }
+        sendIPREAD(tpInput, clientSocket);
+
+        char buffer[1024] = {0};
+        int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
+        buffer[errRCV] = '\n';
+
+        if(errRCV == -1){
+            std::cout << "error in DEL recv" << std::endl;
+            return DEL;
+        }
+
+        if(std::string(buffer) == "ERR\n"){
+            std::cout << "item couldnt be deleted" << std::endl;
+        }else if(std::string(buffer) == "OK\n"){
+            std::cout << "item deleted" << std::endl;
+        }
+
     }
     else if (input.substr(0, 4) == "QUIT")
     {
