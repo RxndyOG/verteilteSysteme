@@ -165,16 +165,21 @@ void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket, std::ve
     n.push_back(tp);
 }
 
-void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n)
+void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n, struct TextPreset tp)
 {
     int totalAmmountMESS = n.size();
 
     std::string LISTstring = "";
 
+    bool sendUSERLIST = false;
+
     for (int i = 0; i < totalAmmountMESS; i++)
     {
-
-        LISTstring = LISTstring + std::to_string(i) + "\n" + n[i].sender + "\n" + n[i].subject + "\n" + n[i].text.substr(0, 10) + "\n";
+        if (n[i].sender == tp.sender)
+        {
+            LISTstring = LISTstring + std::to_string(i) + "\n" + n[i].sender + "\n" + n[i].subject + "\n" + n[i].text.substr(0, 10) + "\n";
+            sendUSERLIST = true;
+        }
     }
 
     if (LISTstring.size() > static_cast<long unsigned int>(_blockSIZE - 1))
@@ -182,7 +187,14 @@ void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n)
         std::cout << "LIST zu groSS" << std::endl;
     }
 
-    send(clientSocket, LISTstring.c_str(), LISTstring.size(), 0);
+    if (sendUSERLIST == false)
+    {
+        send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+    }
+    else
+    {
+        send(clientSocket, LISTstring.c_str(), LISTstring.size(), 0);
+    }
 }
 
 struct TextPreset calcINFOstring(struct TextPreset tp, int type)
@@ -367,6 +379,47 @@ void initializeREAD(struct TextPreset tp, int clientSocket, std::vector<struct T
     }
 }
 
+struct TextPreset recvLISTstring(struct TextPreset tp, int clientSocket)
+{
+    char buffer[1024] = {0};
+    int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRCV] = '\n';
+    if (errRCV == -1)
+    {
+        std::cout << "Error in recvLISTstring" << std::endl;
+        send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+    }
+
+    std::string LISTstring = buffer;
+    std::string parseTemp = "";
+    int j = 0;
+    for (long unsigned int i = 0; i < LISTstring.size(); i++)
+    {
+        if (LISTstring[i] == '\n')
+        {
+            switch (j)
+            {
+            case 0:
+                tp.sender = parseTemp;
+                break;
+            case 1:
+                tp.ID = std::stoi(parseTemp);
+                break;
+            default:
+                break;
+            }
+            parseTemp = "";
+            j++;
+        }
+        else
+        {
+            parseTemp += LISTstring[i];
+        }
+    }
+
+    return tp;
+}
+
 int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
 {
 
@@ -419,7 +472,8 @@ int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
         {
             send(clientSocket, "OK\n", sizeof("OK\n"), 0);
         }
-        LISTsendFunct(clientSocket, n);
+        tpRECV = recvLISTstring(tpRECV, clientSocket);
+        LISTsendFunct(clientSocket, n, tpRECV);
         return LIST;
         break;
     case QUIT:

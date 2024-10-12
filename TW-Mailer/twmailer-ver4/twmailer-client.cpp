@@ -93,7 +93,23 @@ struct TextPreset calcINFOstring(struct TextPreset tp, int type)
     case QUIT:
 
         tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(1) + "\n" + std::to_string(1) + "\n";
-        
+
+        break;
+    case LIST:
+        tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
+        tp.length = tempString.size();
+
+        if (tempString.size() <= static_cast<long unsigned int>(_blockSIZE))
+        {
+            tp.packageNUM = 1;
+        }
+        else
+        {
+            double rounder = static_cast<double>(tempString.size()) / static_cast<double>(_blockSIZE);
+            tp.packageNUM = std::ceil(rounder);
+        }
+
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
         break;
     default:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
@@ -244,6 +260,11 @@ void recvLISTprint(int clientSocket)
         std::cout << "error in recvLISTprint" << std::endl;
     }
 
+    if(std::string(buffer) == "ERR\n"){
+        std::cout << "NO email with given username exists" << std::endl;
+        return;
+    }
+
     parseLIST(buffer);
 
     return;
@@ -392,6 +413,23 @@ void sendIPREAD(struct TextPreset tp, int clientSocket)
     send(clientSocket, READstring.c_str(), READstring.size(), 0);
 }
 
+struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp){
+
+    std::string LISTstring = "";
+
+    LISTstring = LISTstring + tp.username + "\n" + std::to_string(tp.ID) + "\n";
+
+    send(clientSocket, LISTstring.c_str(), LISTstring.size(), 0);
+
+    return tp;
+}
+
+struct TextPreset LISTinput(struct TextPreset tp){
+    std::cout << "username: ";
+    std::getline(std::cin, tp.username);
+    return tp;
+}
+
 int userINPUTfindOpt(int clientSocket)
 {
     std::string input = "";
@@ -447,6 +485,7 @@ int userINPUTfindOpt(int clientSocket)
     }
     else if (input.substr(0, 4) == "LIST")
     {
+        tpInput = LISTinput(tpInput);
         tpInput = calcINFOstring(tpInput, LIST);
         int testLIST = sendINFOstring(clientSocket, tpInput);
         if (testLIST == -1)
@@ -454,6 +493,7 @@ int userINPUTfindOpt(int clientSocket)
             std::cout << "Not enough Elements to LIST" << std::endl;
             return LIST;
         }
+        tpInput = sendLISTuser(clientSocket, tpInput);
         recvLISTprint(clientSocket);
         return LIST;
     }
