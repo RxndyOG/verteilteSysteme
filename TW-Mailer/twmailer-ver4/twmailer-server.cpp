@@ -10,6 +10,7 @@
 
 int _blockSIZE = 1024;
 
+// das Struct das überall benutzt wird um Messages zu parsen zu schicken und zu speichern
 struct TextPreset
 {
     int packageNUM;
@@ -26,6 +27,7 @@ struct TextPreset
     std::string infoString;
 };
 
+//Enum der dem Server bzw User sagt welchen Typ die nachricht hat
 enum type
 {
     SEND = 1,
@@ -36,6 +38,7 @@ enum type
     COMMENT = 0,
 };
 
+// resetet den Struct um ihn wieder zu benutzen. Ist nicht wirklich nötig, wird bei der endabgabe nicht vorhanden sein.
 struct TextPreset resetTP(struct TextPreset tp)
 {
     tp.sender = "";
@@ -53,6 +56,7 @@ struct TextPreset resetTP(struct TextPreset tp)
     return tp;
 }
 
+// parsed den INFO string
 struct TextPreset parseINFO(struct TextPreset tp, std::string info)
 {
     tp.infoString = info;
@@ -89,6 +93,7 @@ struct TextPreset parseINFO(struct TextPreset tp, std::string info)
     return tp;
 }
 
+// parsed den SEND string
 struct TextPreset parseSEND(struct TextPreset tp, std::string sendMESS)
 {
     std::string parseTemp = "";
@@ -124,6 +129,7 @@ struct TextPreset parseSEND(struct TextPreset tp, std::string sendMESS)
     return tp;
 }
 
+// speichert den vom user erhaltenen Message string bei 1 package
 void initializeSENDSAVE(struct TextPreset tp, int clientSocket, std::vector<struct TextPreset> &n)
 {
 
@@ -141,6 +147,7 @@ void initializeSENDSAVE(struct TextPreset tp, int clientSocket, std::vector<stru
     n.push_back(tp);
 }
 
+// speichert den vom user erhaltenen Message string bei mehreren packages
 void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket, std::vector<struct TextPreset> &n)
 {
     std::string completeMessage;
@@ -165,6 +172,7 @@ void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket, std::ve
     n.push_back(tp);
 }
 
+// sended den LIST string für den User
 void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n, struct TextPreset tp)
 {
     int totalAmmountMESS = n.size();
@@ -197,6 +205,7 @@ void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n, struct T
     }
 }
 
+// berechnet den Info string
 struct TextPreset calcINFOstring(struct TextPreset tp, int type)
 {
     tp.type = type;
@@ -244,6 +253,7 @@ struct TextPreset calcINFOstring(struct TextPreset tp, int type)
     return tp;
 }
 
+// sendet die Message für den User bei 1 Package
 int sendMESSstring(int clientSocket, struct TextPreset tp)
 {
 
@@ -254,6 +264,7 @@ int sendMESSstring(int clientSocket, struct TextPreset tp)
     return 0;
 }
 
+// sendet die Message für den User bei mehreren Packages
 int sendMESSstring_Packages(int clientSocket, struct TextPreset tp)
 {
     std::string SENDstring = tp.argument + "\n" + tp.sender + "\n" + tp.subject + "\n" + tp.text + "\n";
@@ -284,6 +295,7 @@ int sendMESSstring_Packages(int clientSocket, struct TextPreset tp)
     return 0;
 }
 
+// sendet den Info string
 int sendINFOstring(int clientSocket, struct TextPreset tp)
 {
 
@@ -306,6 +318,7 @@ int sendINFOstring(int clientSocket, struct TextPreset tp)
     return 0;
 }
 
+// parsed die READ message des Users
 struct TextPreset parseREAD(struct TextPreset tp, std::string sendMESS)
 {
     std::string parseTemp = "";
@@ -336,6 +349,7 @@ struct TextPreset parseREAD(struct TextPreset tp, std::string sendMESS)
     return tp;
 }
 
+// wird benutzt um die READ message des Users zu verarbeiten und sendet zurück 
 void initializeREAD(struct TextPreset tp, int clientSocket, std::vector<struct TextPreset> &n)
 {
 
@@ -382,6 +396,7 @@ void initializeREAD(struct TextPreset tp, int clientSocket, std::vector<struct T
     }
 }
 
+// bekommt die LIST anfrage des users und verarbeitet sie
 struct TextPreset recvLISTstring(struct TextPreset tp, int clientSocket)
 {
     char buffer[1024] = {0};
@@ -423,6 +438,7 @@ struct TextPreset recvLISTstring(struct TextPreset tp, int clientSocket)
     return tp;
 }
 
+// wird benutzt um die DEL option des users zu verarbeiten
 void initializeDEL(struct TextPreset tp, int clientSocket, std::vector<struct TextPreset> &n)
 {
     char buffer[1024] = {0};
@@ -460,6 +476,7 @@ void initializeDEL(struct TextPreset tp, int clientSocket, std::vector<struct Te
     }
 }
 
+// wird benutzt um zu testen was der User als option ausgewählt hat. Also SEND, READ, etc...
 int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
 {
 

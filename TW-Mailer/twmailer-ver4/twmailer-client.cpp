@@ -10,6 +10,7 @@
 
 int _blockSIZE = 1024;
 
+// das Struct das überall benutzt wird um Messages zu parsen zu schicken und zu speichern
 struct TextPreset
 {
     int packageNUM;
@@ -25,6 +26,7 @@ struct TextPreset
     int ID;
 };
 
+//Enum der dem Server bzw User sagt welchen Typ die nachricht hat
 enum type
 {
     SEND = 1,
@@ -35,6 +37,7 @@ enum type
     COMMENT = 0,
 };
 
+// resetet den Struct um ihn wieder zu benutzen. Ist nicht wirklich nötig, wird bei der endabgabe nicht vorhanden sein.
 struct TextPreset resetTP(struct TextPreset tp)
 {
     tp.sender = "";
@@ -51,6 +54,7 @@ struct TextPreset resetTP(struct TextPreset tp)
     return tp;
 }
 
+// berechnet den String der zuerst zum Server bzw Client geschickt werden soll damit sie wissen wie lange die nächste gesendete Message ist
 struct TextPreset calcINFOstring(struct TextPreset tp, int type)
 {
     tp.type = type;
@@ -132,6 +136,7 @@ struct TextPreset calcINFOstring(struct TextPreset tp, int type)
     return tp;
 }
 
+// wird benutzt um die vom user gewollte message zu bekommen
 struct TextPreset SENDInput(struct TextPreset tp)
 {
 
@@ -151,6 +156,7 @@ struct TextPreset SENDInput(struct TextPreset tp)
     return tp;
 }
 
+// Sendet den Info string
 int sendINFOstring(int clientSocket, struct TextPreset tp)
 {
 
@@ -175,6 +181,7 @@ int sendINFOstring(int clientSocket, struct TextPreset tp)
     return 0;
 }
 
+// sendet die eigene Message wenn sie ein package hat
 int sendMESSstring(int clientSocket, struct TextPreset tp)
 {
 
@@ -185,6 +192,7 @@ int sendMESSstring(int clientSocket, struct TextPreset tp)
     return 0;
 }
 
+// sendet die eigene Message wenn sie mehrere Packages hat
 int sendMESSstring_Packages(int clientSocket, struct TextPreset tp)
 {
     std::string SENDstring = tp.argument + "\n" + tp.sender + "\n" + tp.subject + "\n" + tp.text + "\n";
@@ -215,6 +223,7 @@ int sendMESSstring_Packages(int clientSocket, struct TextPreset tp)
     return 0;
 }
 
+// parsed die LIST funktion
 void parseLIST(std::string text)
 {
 
@@ -249,6 +258,7 @@ void parseLIST(std::string text)
     }
 }
 
+// bekommt die LIST option vom server und printet sie
 void recvLISTprint(int clientSocket)
 {
     char buffer[1024] = {0};
@@ -271,6 +281,7 @@ void recvLISTprint(int clientSocket)
     return;
 }
 
+// parsed den Info String
 struct TextPreset parseINFO(struct TextPreset tp, std::string info)
 {
     tp.infoString = info;
@@ -307,6 +318,7 @@ struct TextPreset parseINFO(struct TextPreset tp, std::string info)
     return tp;
 }
 
+// parsed den READ string bzw option
 struct TextPreset parseREAD(struct TextPreset tp, std::string text)
 {
 
@@ -343,6 +355,7 @@ struct TextPreset parseREAD(struct TextPreset tp, std::string text)
     return tp;
 }
 
+// speichert den vom SEND bekommenen string als struct ab
 void initializeSENDSAVE(struct TextPreset tp, int clientSocket)
 {
 
@@ -363,6 +376,7 @@ void initializeSENDSAVE(struct TextPreset tp, int clientSocket)
     std::cout << tp.text << std::endl;
 }
 
+// speichert den vom SEND bekommenen string ab wenn er mehr als 1 package hat
 void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket)
 {
     std::string completeMessage;
@@ -393,6 +407,7 @@ void initializeSENDSAVE_Packages(struct TextPreset tp, int clientSocket)
     std::cout << tp.text << std::endl;
 }
 
+// fragt den user nach dem Input wenn er READ angegeben hat
 struct TextPreset READinput(struct TextPreset tp)
 {
     std::cout << "Username: ";
@@ -404,6 +419,7 @@ struct TextPreset READinput(struct TextPreset tp)
     return tp;
 }
 
+// diese funktion ist eigentlich dafür da das der User erkannt wird beim READ mittels der ID
 void sendIPREAD(struct TextPreset tp, int clientSocket)
 {
 
@@ -414,6 +430,7 @@ void sendIPREAD(struct TextPreset tp, int clientSocket)
     send(clientSocket, READstring.c_str(), READstring.size(), 0);
 }
 
+// sendet die LIST option zum server
 struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp)
 {
 
@@ -426,6 +443,7 @@ struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp)
     return tp;
 }
 
+// fragt den USer nach dem Input wenn er LIST ausgewählt hat
 struct TextPreset LISTinput(struct TextPreset tp)
 {
     std::cout << "username: ";
@@ -433,6 +451,7 @@ struct TextPreset LISTinput(struct TextPreset tp)
     return tp;
 }
 
+// verarbeitet den Input vom user Also was er gewählt hat ob SEND, LIST, READ etc...
 int userINPUTfindOpt(int clientSocket)
 {
     std::string input = "";
@@ -545,6 +564,7 @@ int userINPUTfindOpt(int clientSocket)
     return 0;
 }
 
+// wird für die IP benutzt nicht so wichtig schaut nur ob der user localhost eingegeben hat
 std::string convertToLowercase(const std::string &str)
 {
     std::string result = "";
