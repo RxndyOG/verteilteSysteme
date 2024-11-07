@@ -54,6 +54,27 @@ struct TextPreset resetTP(struct TextPreset tp)
     return tp;
 }
 
+char* recvBufferFromClient(int clientSocket){
+    static char buffer[1024] = {0};
+    int errRcv = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRcv] = '\n';
+    if(errRcv == -1){
+        std::cout << "Error - RECV from client" << std::endl;
+    }
+    return buffer;
+}
+
+int calculatePackageNum(size_t messageSize) {
+    return (messageSize <= static_cast<long unsigned int>(_blockSIZE)) ? 1 : std::ceil(static_cast<double>(messageSize) / static_cast<long unsigned int>(_blockSIZE));
+}
+
+struct TextPreset setInfoString(struct TextPreset tp, std::string tempString){
+        tp.length = tempString.size();
+        tp.packageNUM = calculatePackageNum(tp.length);
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+    return tp;
+}
+
 // berechnet den String der zuerst zum Server bzw Client geschickt werden soll damit sie wissen wie lange die nächste gesendete Message ist
 struct TextPreset calcINFOstring(struct TextPreset tp, int type)
 {
@@ -64,72 +85,22 @@ struct TextPreset calcINFOstring(struct TextPreset tp, int type)
     {
     case SEND:
         tempString = tempString + tp.argument + "\n" + tp.sender + "\n" + tp.subject + "\n" + tp.text + "\n";
-        tp.length = tempString.size();
-
-        if (tempString.size() <= static_cast<long unsigned int>(_blockSIZE))
-        {
-            tp.packageNUM = 1;
-        }
-        else
-        {
-            double rounder = static_cast<double>(tempString.size()) / static_cast<double>(_blockSIZE);
-            tp.packageNUM = std::ceil(rounder);
-        }
-
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp = setInfoString(tp, tempString);
         break;
     case READ:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
-        tp.length = tempString.size();
-
-        if (tempString.size() <= static_cast<long unsigned int>(_blockSIZE))
-        {
-            tp.packageNUM = 1;
-        }
-        else
-        {
-            double rounder = static_cast<double>(tempString.size()) / static_cast<double>(_blockSIZE);
-            tp.packageNUM = std::ceil(rounder);
-        }
-
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp = setInfoString(tp, tempString);
         break;
     case QUIT:
-
         tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(1) + "\n" + std::to_string(1) + "\n";
-
         break;
     case LIST:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
-        tp.length = tempString.size();
-
-        if (tempString.size() <= static_cast<long unsigned int>(_blockSIZE))
-        {
-            tp.packageNUM = 1;
-        }
-        else
-        {
-            double rounder = static_cast<double>(tempString.size()) / static_cast<double>(_blockSIZE);
-            tp.packageNUM = std::ceil(rounder);
-        }
-
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp = setInfoString(tp, tempString);
         break;
     default:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
-        tp.length = tempString.size();
-
-        if (tempString.size() <= static_cast<long unsigned int>(_blockSIZE))
-        {
-            tp.packageNUM = 1;
-        }
-        else
-        {
-            double rounder = static_cast<double>(tempString.size()) / static_cast<double>(_blockSIZE);
-            tp.packageNUM = std::ceil(rounder);
-        }
-
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp = setInfoString(tp, tempString);
         break;
     }
 
@@ -150,7 +121,7 @@ struct TextPreset SENDInput(struct TextPreset tp)
     {
         currentMESS.clear();
         std::getline(std::cin, currentMESS);
-        tp.text += currentMESS;
+        tp.text += (currentMESS + '\n');
     } while (currentMESS != ".");
 
     return tp;
@@ -159,36 +130,22 @@ struct TextPreset SENDInput(struct TextPreset tp)
 // Sendet den Info string
 int sendINFOstring(int clientSocket, struct TextPreset tp)
 {
-
     send(clientSocket, tp.infoString.c_str(), tp.infoString.size(), 0);
     char buffer[1024] = {0};
-    int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
-    buffer[errRCV] = '\n';
-    if (errRCV == -1)
-    {
-        std::cout << "Error in senINFOstring" << std::endl;
-    }
-
+    strncpy(buffer, recvBufferFromClient(clientSocket), sizeof(buffer));
     if (std::string(buffer) == "ERR\n")
-    {
-        std::cout << "Error in sendINFOstring: not enough elements" << std::endl;
-        return -1;
-    }
+    { std::cout << "Error in sendINFOstring: not enough elements" << std::endl; return -1; }
     else
-    {
-        std::cout << buffer << std::endl;
-    }
+    { std::cout << buffer << std::endl; }
     return 0;
 }
 
 // sendet die eigene Message wenn sie ein package hat
 int sendMESSstring(int clientSocket, struct TextPreset tp)
 {
-
     std::string SENDstring = "";
     SENDstring = SENDstring + tp.argument + "\n" + tp.sender + "\n" + tp.subject + "\n" + tp.text + "\n";
     send(clientSocket, SENDstring.c_str(), SENDstring.size(), 0);
-
     return 0;
 }
 
@@ -262,13 +219,7 @@ void parseLIST(std::string text)
 void recvLISTprint(int clientSocket)
 {
     char buffer[1024] = {0};
-    int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
-    buffer[errRCV] = '\0';
-
-    if (errRCV == -1)
-    {
-        std::cout << "error in recvLISTprint" << std::endl;
-    }
+    strncpy(buffer, recvBufferFromClient(clientSocket), sizeof(buffer));
 
     if (std::string(buffer) == "ERR\n")
     {
@@ -341,6 +292,7 @@ struct TextPreset parseREAD(struct TextPreset tp, std::string text)
                 break;
             default:
                 tp.text += parseTemp;
+                tp.text += '\n';
                 break;
             }
             parseTemp = "";
@@ -358,16 +310,8 @@ struct TextPreset parseREAD(struct TextPreset tp, std::string text)
 // speichert den vom SEND bekommenen string als struct ab
 void initializeSENDSAVE(struct TextPreset tp, int clientSocket)
 {
-
     char buffer[1024] = {0};
-    int errRcv = recv(clientSocket, buffer, sizeof(buffer), 0);
-    buffer[errRcv] = '\n';
-
-    if (errRcv == -1)
-    {
-        std::cout << "Error in initialize single pack" << std::endl;
-    }
-
+    strncpy(buffer, recvBufferFromClient(clientSocket), sizeof(buffer));
     tp = parseREAD(tp, std::string(buffer));
 
     std::cout << tp.argument << std::endl;
@@ -422,24 +366,17 @@ struct TextPreset READinput(struct TextPreset tp)
 // diese funktion ist eigentlich dafür da das der User erkannt wird beim READ mittels der ID
 void sendIPREAD(struct TextPreset tp, int clientSocket)
 {
-
     std::string READstring = "";
-
     READstring = READstring + tp.username + "\n" + std::to_string(tp.ID) + "\n";
-
     send(clientSocket, READstring.c_str(), READstring.size(), 0);
 }
 
 // sendet die LIST option zum server
 struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp)
 {
-
     std::string LISTstring = "";
-
     LISTstring = LISTstring + tp.username + "\n" + std::to_string(tp.ID) + "\n";
-
     send(clientSocket, LISTstring.c_str(), LISTstring.size(), 0);
-
     return tp;
 }
 
@@ -483,14 +420,9 @@ int userINPUTfindOpt(int clientSocket)
             return READ;
         }
         sendIPREAD(tpInput, clientSocket);
+
         char buffer[1024] = {0};
-        int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
-        buffer[errRCV] = '\n';
-        if (errRCV == -1)
-        {
-            std::cout << "Error in READ string" << std::endl;
-            send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
-        }
+        strncpy(buffer, recvBufferFromClient(clientSocket), sizeof(buffer));
 
         tpInput = parseINFO(tpInput, std::string(buffer));
         send(clientSocket, "OK\n", sizeof("OK\n"), 0);
@@ -531,13 +463,7 @@ int userINPUTfindOpt(int clientSocket)
         sendIPREAD(tpInput, clientSocket);
 
         char buffer[1024] = {0};
-        int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
-        buffer[errRCV] = '\n';
-
-        if(errRCV == -1){
-            std::cout << "error in DEL recv" << std::endl;
-            return DEL;
-        }
+        strncpy(buffer, recvBufferFromClient(clientSocket), sizeof(buffer));
 
         if(std::string(buffer) == "ERR\n"){
             std::cout << "item couldnt be deleted" << std::endl;
