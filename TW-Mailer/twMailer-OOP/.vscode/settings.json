@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "cstring": "cpp",
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -44,13 +45,7 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "cstring": "cpp",
-        "sstream": "cpp",
-        "chrono": "cpp",
-        "codecvt": "cpp",
-        "ctime": "cpp",
-        "ratio": "cpp",
         "fstream": "cpp",
-        "iomanip": "cpp"
+        "sstream": "cpp"
     }
 }
