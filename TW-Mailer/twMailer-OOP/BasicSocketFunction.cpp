@@ -50,7 +50,7 @@ int BasicSocketFunction::recvParse(std::string arg){
         std::cout << "QUIT from Client" << std::endl;
         return QUIT;
     }
-    std::cout << "CLIENT COMMENT: " << arg << std::endl;
+    std::cout << "CLIENT COMMENT: " << arg;
     return COMMENT;
 }
 

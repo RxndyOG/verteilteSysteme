@@ -30,8 +30,9 @@ int main(int argc, char *argv[])
     ErrorHandling error;
     FileHandling files;
 
+    //wird als file saving benutzt momentan noch im testen
     txtPreset txt;
-
+    txt.fileLocal = "data/test.txt";
     txt.uid = 0;
     txt.mailID = 0;
     txt.username = "test";
@@ -40,10 +41,12 @@ int main(int argc, char *argv[])
     txt.text = "test";
 
     files.saveToTXT(txt);
+    // ende file saving test
 
     server->CreateSocket();
-    int err = server->BindSocket(atoi(argv[1]));
+    int err = server->BindSocket(atoi(argv[1]));    //methode der ServerClass klasse. Binded die Parameter zum socket
 
+    // basic error handeling
     if(err != 0){
         error.CommonError(err);
         close(server->GetServerSocket());
@@ -51,7 +54,7 @@ int main(int argc, char *argv[])
         return err;
     }
 
-    err = server->ListenSockets(argv[1]);
+    err = server->ListenSockets(argv[1]);   
 
     if(err != 0){
         error.CommonError(err);
@@ -72,12 +75,12 @@ int main(int argc, char *argv[])
     err = server->UserIP();
 
     int cancell = 0;
-    do
+    do  //endlosschleife zum bekommen des user inputs
     {
-        std::string arg = BasicSocketFunction().recvFunctBasic(server->GetClientSocket());
-        cancell = BasicSocketFunction().recvParse(arg);
+        std::string arg = BasicSocketFunction().recvFunctBasic(server->GetClientSocket());  //recvFunctBasic ist eine einfache funktion zum bekommen des user gesendeten contents
+        cancell = BasicSocketFunction().recvParse(arg);                                     //recvParse parsed den gerade bekommenen string des users. Returned INT als ENUM bei return QUIT wird der server geschlossen.
 
-    } while (cancell != QUIT);
+    } while (cancell != QUIT);      // kann für multithreading nicht so weiter gehen muss angepasst werden
 
     std::cout << "client closed server" << std::endl;
 

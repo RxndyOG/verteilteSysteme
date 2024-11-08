@@ -6,6 +6,7 @@
 struct txtPreset {
     int uid;
     int mailID;
+    std::string fileLocal;
     std::string username;
     std::string sender;
     std::string subject;

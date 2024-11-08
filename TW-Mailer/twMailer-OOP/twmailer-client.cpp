@@ -24,11 +24,6 @@ void PrintUsage(char *argv[]){
     std::cout << "Usage: " << argv[0] << " <IP-Adresse> <Port>" << std::endl;
 }
 
-int getUserInput(ClientClass* client){
-    int i = UserInputClass().ChooseInput(client);
-    return i;
-}
-
 int main(int argc, char *argv[]){
 
     if (argc < 3){
@@ -65,13 +60,10 @@ int main(int argc, char *argv[]){
     std::string recv = BasicSocketFunction().recvFunctBasic(client->GetClientSocket());
 
     int startINPUT = 0;
-    do
-    {
+    do{
         std::cout << "\n --------- Open Terminal ----------" << std::endl;
-        std::cout << "[SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
-        startINPUT = getUserInput(client);
-
-
+        std::cout << " [SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
+        startINPUT = UserInputClass().ChooseInput(client);
     } while (startINPUT != QUIT);
 
     std::cout << "quiting in prozess" << std::endl;

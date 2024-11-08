@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+
 #include "txtPreset.h"
 #include "BasicSocketFunction.h"
 #include "ClientClass.h"
@@ -14,11 +16,11 @@ UserInputClass::~UserInputClass()
 {
 
 }
-/**/
+
 int UserInputClass::ChooseInput(ClientClass* client){
 
     std::string input = "";
-    std::cin >> input;
+    std::getline(std::cin, input);
     if(input.substr(0,4) == "SEND"){
         BasicSocketFunction().sendFunctBasic(client->GetClientSocket(),"SEND");
         return SEND;

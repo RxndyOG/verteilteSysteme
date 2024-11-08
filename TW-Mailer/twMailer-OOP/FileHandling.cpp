@@ -15,7 +15,7 @@ FileHandling::~FileHandling()
 
 int FileHandling::saveToTXT(txtPreset txt){
 
-    std::ofstream outFile("data/test.txt", std::ios::app);
+    std::ofstream outFile(txt.fileLocal, std::ios::app);
 
     if (outFile.is_open()) {
 
