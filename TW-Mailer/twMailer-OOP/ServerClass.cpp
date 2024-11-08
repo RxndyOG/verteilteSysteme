@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "txtPreset.h"
 #include "ServerClass.h"
 #include "BasicSocketFunction.h"
 

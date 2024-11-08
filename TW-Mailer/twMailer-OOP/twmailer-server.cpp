@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     }
 
     err = server->UserIP();
-
+    
     int cancell = 0;
     do  //endlosschleife zum bekommen des user inputs
     {

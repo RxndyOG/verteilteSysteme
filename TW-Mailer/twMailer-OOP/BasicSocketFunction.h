@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <functional>
+#include "txtPreset.h"
+
 class BasicSocketFunction
 {
 public:
@@ -10,12 +14,15 @@ public:
     ~BasicSocketFunction();
 
     std::string recvFunctBasic(int i);
+
+    void infoStringCalc(txtPreset* tp);
     int recvParse(std::string arg);
 
     void sendFunctBasic(int i, std::string arg);
 
 private:
 
+    std::unordered_map<std::string, std::function<int(txtPreset*)>> argumentParse = {};
 };
 
 #endif

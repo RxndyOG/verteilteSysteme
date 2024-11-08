@@ -59,17 +59,21 @@ int main(int argc, char *argv[]){
 
     std::string recv = BasicSocketFunction().recvFunctBasic(client->GetClientSocket());
 
+    txtPreset* tp = new txtPreset;
+
+
     int startINPUT = 0;
     do{
         std::cout << "\n --------- Open Terminal ----------" << std::endl;
         std::cout << " [SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
-        startINPUT = UserInputClass().ChooseInput(client);
+        startINPUT = UserInputClass().ChooseInput(tp, client);
     } while (startINPUT != QUIT);
 
     std::cout << "quiting in prozess" << std::endl;
 
     close(client->GetClientSocket());
 
+    delete tp;
     delete client;
 
     return 0;
