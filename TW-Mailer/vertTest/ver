@@ -1,0 +1,38 @@
+
+LDAP
+Ein LDAP Server hat folgende Schemadefinition gespeichert:
+
+objectclass A
+MUST a, b, c
+MAY d, e, f
+
+objectclass B
+MUST a, d, x 
+MAY b, y
+
+objectclass C SUP A 
+MUST d
+MAY x, y, z
+
+Legende:
+• Großbuchstaben: Object Classes
+• Kleinbuchstaben: Attribute
+• MUST = notwendig, MAY = optional, SUP = abgeleitet von
+
+Welche der folgenden Entries sind gültig?
+
+Select one or more:
+- Implementierte Object Classes: A, B, C
+- Gesetzte Attribute: a, x, d, c, b, y
+
+- Implementierte Object Classes: A
+- Gesetzte Attribute: a, c, b, g
+
+- Implementierte Object Classes: B, C
+- Gesetzte Attribute: a, b, c, d, x, y
+
+- Implementierte Object Classes: C
+- Gesetzte Attribute: a, b, c, d, e, f, x, y
+
+- Implementierte Object Classes: A, B
+- Gesetzte Attribute: a, b, d, f, e

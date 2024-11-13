@@ -67,6 +67,7 @@ int main(int argc, char *argv[]){
         std::cout << "\n --------- Open Terminal ----------" << std::endl;
         std::cout << " [SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
         startINPUT = UserInputClass().ChooseInput(tp, client);
+        
     } while (startINPUT != QUIT);
 
     std::cout << "quiting in prozess" << std::endl;
