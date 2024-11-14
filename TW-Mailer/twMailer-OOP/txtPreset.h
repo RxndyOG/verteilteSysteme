@@ -14,7 +14,7 @@ struct infoPreset{
     int uid;
     std::string username;
     std::string infoString;
-
+    
     infoPreset() 
         : argument(0), packageNUM(0), packageLength(0), 
           textLength(0), uid(0), username(""), infoString("") {}

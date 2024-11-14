@@ -13,7 +13,7 @@ public:
     UserInputClass();
     ~UserInputClass();
 
-    int UserProfile(txtPreset* tp);
+    std::string UserProfile();
 
     int sendInput(txtPreset* tp);
     int ChooseInput(txtPreset* tp, ClientClass* client);

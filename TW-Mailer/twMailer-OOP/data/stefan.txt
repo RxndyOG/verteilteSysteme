@@ -1,0 +1,36 @@
+{
+0
+
+0
+sender
+subject
+message
+
+}
+{
+0
+
+0
+das ist teil des senders
+das ist teil des subject
+das ist teil der message
+
+}
+{
+0
+
+0
+sender
+subject
+message
+
+}
+{
+0
+
+0
+reset
+test
+mesg
+
+}

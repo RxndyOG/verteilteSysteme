@@ -8,12 +8,15 @@
 #include "ErrorHandling.h"
 #include "txtPreset.h"
 #include "BasicSocketFunction.h"
+#include "FileHandling.h"
+
+
 
 BasicSocketFunction::BasicSocketFunction()
 {
 
     argumentParse["SEND"] = [this](txtPreset *tp)
-    { tp->ip.argument = SEND; std::cout << "SEND from Client" << std::endl; return SEND; };
+    { safeSENDInFile(tp); std::cout << "SEND from Client" << std::endl; return SEND; };
     argumentParse["READ"] = [this](txtPreset *tp)
     { tp->ip.argument = READ; std::cout << "READ from Client" << std::endl; return READ; };
     argumentParse["LIST"] = [this](txtPreset *tp)
@@ -26,6 +29,22 @@ BasicSocketFunction::BasicSocketFunction()
 
 BasicSocketFunction::~BasicSocketFunction()
 {
+}
+
+void BasicSocketFunction::safeSENDInFile(txtPreset *tp){
+    
+    std::cout << "sender: " << tp->sender << std::endl;
+    std::cout << "subject: " << tp->subject << std::endl;
+    std::cout << "message: " << tp->text << std::endl;
+
+    FileHandling files;
+
+    tp->fileLocal.append("/");
+    tp->fileLocal.append(tp->ip.username);
+    tp->fileLocal.append(".txt");
+
+    files.saveToTXT(*tp);
+
 }
 
 void BasicSocketFunction::parseMsg(txtPreset *tp, int socket) {
@@ -65,16 +84,11 @@ void BasicSocketFunction::parseMsg(txtPreset *tp, int socket) {
                 break;
         }
     }
-
-    std::cout << "sender: " << tp->sender << std::endl;
-    std::cout << "subject: " << tp->subject << std::endl;
-    std::cout << "message: " << tp->text << std::endl;
 }
-
 
 void BasicSocketFunction::parseInfoString(txtPreset *tp)
 {
-    std::array<std::string, 4> argArray = {};
+    std::array<std::string, 5> argArray = {};
     size_t n = 0;
     std::string tmpString;
 
@@ -105,6 +119,7 @@ void BasicSocketFunction::parseInfoString(txtPreset *tp)
         tp->ip.textLength = std::stoi(argArray[1]);
         tp->ip.packageLength = std::stoi(argArray[2]);
         tp->ip.packageNUM = std::stoi(argArray[3]);
+        tp->ip.username = argArray[4];
     }
     catch (const std::invalid_argument &e)
     {
@@ -142,30 +157,30 @@ void BasicSocketFunction::infoStringCalc(txtPreset *tp)
     tp->ip.textLength = tp->sender.size() + tp->subject.size() + tp->text.size() + 0;
     tp->ip.packageLength = _BlockSize;
     tp->ip.packageNUM = std::ceil(tp->ip.textLength / tp->ip.packageLength) + 1;
-    tp->ip.infoString = std::to_string(1) + "\n" + std::to_string(tp->ip.textLength) + "\n" + std::to_string(tp->ip.packageLength) + "\n" + std::to_string(tp->ip.packageNUM) + "\n";
+    tp->ip.infoString = std::to_string(1) + "\n" + std::to_string(tp->ip.textLength) + "\n" + std::to_string(tp->ip.packageLength) + "\n" + std::to_string(tp->ip.packageNUM) + "\n" + tp->username + "\n";
 }
 
-int BasicSocketFunction::recvParse(std::string arg, int socket)
+int BasicSocketFunction::recvParse(std::string arg, int socket, txtPreset * tp)
 {
-    txtPreset *tp = new txtPreset;
+
     auto it = argumentParse.find(arg.substr(0, 4));
     if (it != argumentParse.end())
     {
-        int result = it->second(tp);
         tp->ip.infoString = recvFunctBasic(socket);
         sendFunctBasic(socket, "OK\n");
         parseInfoString(tp);
         parseMsg(tp, socket);
-        delete tp;
+        int result = it->second(tp);
+    
         return result;
     }
     else
     {
         std::cout << "COMMENT from Client" << std::endl;
-        delete tp;
+  
         return COMMENT;
     }
-    delete tp;
+
 }
 
 void BasicSocketFunction::sendFunctBasic(int socket, std::string arg)

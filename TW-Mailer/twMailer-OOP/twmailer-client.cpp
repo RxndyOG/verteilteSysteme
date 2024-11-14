@@ -63,7 +63,13 @@ int main(int argc, char *argv[]){
 
 
     int startINPUT = 0;
+
+    std::string username = UserInputClass().UserProfile();
+
     do{
+        *tp = txtPreset();
+        tp->username = username;
+        tp->ip.username = username;
         std::cout << "\n --------- Open Terminal ----------" << std::endl;
         std::cout << " [SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
         startINPUT = UserInputClass().ChooseInput(tp, client);

@@ -28,8 +28,6 @@ int main(int argc, char *argv[])
     
     ServerClass* server = new ServerClass();
     ErrorHandling error;
-    FileHandling files;
-
     /*
     //wird als file saving benutzt momentan noch im testen
     txtPreset txt;
@@ -80,9 +78,11 @@ int main(int argc, char *argv[])
     int cancell = 0;
     do  //endlosschleife zum bekommen des user inputs
     {
+        txtPreset *tp = new txtPreset;
+        tp->fileLocal = argv[2];
         std::string arg = BasicSocketFunction().recvFunctBasic(server->GetClientSocket());  //recvFunctBasic ist eine einfache funktion zum bekommen des user gesendeten contents
-        cancell = BasicSocketFunction().recvParse(arg, server->GetClientSocket());                                     //recvParse parsed den gerade bekommenen string des users. Returned INT als ENUM bei return QUIT wird der server geschlossen.
-
+        cancell = BasicSocketFunction().recvParse(arg, server->GetClientSocket(), tp);                                     //recvParse parsed den gerade bekommenen string des users. Returned INT als ENUM bei return QUIT wird der server geschlossen.
+        delete tp;
     } while (cancell != QUIT);      // kann für multithreading nicht so weiter gehen muss angepasst werden
 
     std::cout << "client closed server" << std::endl;

@@ -39,5 +39,5 @@ clean:
 ./bin/server: ./obj/server.o ./obj/ServerClass.o ./obj/FileHandling.o ./obj/ErrorHandling.o ./obj/BasicSocketFunction.o
 	${CC} ${CFLAGS} -o bin/server obj/ServerClass.o obj/FileHandling.o obj/ErrorHandling.o obj/BasicSocketFunction.o obj/server.o
 
-./bin/client: ./obj/client.o ./obj/ClientClass.o ./obj/UserInputClass.o ./obj/ErrorHandling.o ./obj/BasicSocketFunction.o
-	${CC} ${CFLAGS} -o bin/client obj/ClientClass.o obj/UserInputClass.o obj/ErrorHandling.o obj/BasicSocketFunction.o obj/client.o
+./bin/client: ./obj/client.o ./obj/ClientClass.o ./obj/UserInputClass.o ./obj/FileHandling.o ./obj/ErrorHandling.o ./obj/BasicSocketFunction.o
+	${CC} ${CFLAGS} -o bin/client obj/ClientClass.o obj/UserInputClass.o obj/FileHandling.o obj/ErrorHandling.o obj/BasicSocketFunction.o obj/client.o

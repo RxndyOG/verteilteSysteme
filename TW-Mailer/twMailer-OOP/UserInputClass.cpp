@@ -26,14 +26,18 @@ UserInputClass::UserInputClass()
 UserInputClass::~UserInputClass()
 {
 }
-/*
-int UserInputClass::UserProfile(txtPreset* tp){
 
+std::string UserInputClass::UserProfile(){
 
+    std::cout << "Enter username" << std::endl;
+    std::string username, pwd;
+    getline(std::cin, username);
+    std::cout << "Enter Password" << std::endl;
+    getline(std::cin, pwd);
 
-    return 0;
+    return username;
 }
-*/
+
 
 int UserInputClass::sendInput(txtPreset *tp)
 {
@@ -92,5 +96,4 @@ int UserInputClass::ChooseInput(txtPreset *tp, ClientClass *client)
         BasicSocketFunction().sendFunctBasic(client->GetClientSocket(), input);
         return COMMENT;
     }
-    *tp = txtPreset();
 }

@@ -15,10 +15,11 @@ public:
 
     std::string recvFunctBasic(int i);
 
+    void safeSENDInFile(txtPreset *tp);
     void parseMsg(txtPreset* tp,int socket);
     void parseInfoString(txtPreset* tp);
     void infoStringCalc(txtPreset* tp);
-    int recvParse(std::string arg, int socket);
+    int recvParse(std::string arg, int socket, txtPreset *tp);
 
     void sendFunctBasic(int i, std::string arg);
 
