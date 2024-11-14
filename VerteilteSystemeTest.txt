@@ -1,0 +1,15 @@
+closed book 
+hand-written cheat sheet einseitig mit namen und kennzahl
+safe exam test
+
+Theory:
+linux development
+getopt -
+forking -
+processe -
+multitasking
+Distributed Systems
+socket programmierung -
+servermodelle -
+ldap -
+Zeitsynchro -
