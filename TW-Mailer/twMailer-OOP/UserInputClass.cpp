@@ -27,7 +27,8 @@ UserInputClass::~UserInputClass()
 {
 }
 
-std::string UserInputClass::UserProfile(){
+std::string UserInputClass::UserProfile()
+{
 
     std::cout << "Enter username" << std::endl;
     std::string username, pwd;
@@ -37,7 +38,6 @@ std::string UserInputClass::UserProfile(){
 
     return username;
 }
-
 
 int UserInputClass::sendInput(txtPreset *tp)
 {
@@ -80,13 +80,24 @@ int UserInputClass::ChooseInput(txtPreset *tp, ClientClass *client)
         BasicSocketFunction().sendFunctBasic(client->GetClientSocket(), tp->ip.infoString);
         BasicSocketFunction().recvFunctBasic(client->GetClientSocket());
         int currentPosition = 0;
-        while (tp->ip.packageNUM > 0)
+         int currentBlockSize = 0;
+        switch (result)
         {
-            int currentBlockSize = std::min(1024, tp->ip.textLength - currentPosition);
-            std::string block = tp->text.substr(currentPosition, currentBlockSize);
-            BasicSocketFunction().sendFunctBasic(client->GetClientSocket(), block);
-            currentPosition += currentBlockSize;
-            tp->ip.packageNUM--;
+        case SEND:
+            while (tp->ip.packageNUM > 0)
+            {
+                currentBlockSize = std::min(1024, tp->ip.textLength - currentPosition);
+                std::string block = tp->text.substr(currentPosition, currentBlockSize);
+                BasicSocketFunction().sendFunctBasic(client->GetClientSocket(), block);
+                currentPosition += currentBlockSize;
+                tp->ip.packageNUM--;
+            }
+            break;
+        case READ:
+            tp->ip.infoString = BasicSocketFunction().recvFunctBasic(client->GetClientSocket());
+            BasicSocketFunction().parseInfoString(tp);
+            BasicSocketFunction().recvParseClient(client->GetClientSocket(), tp);
+            break;
         }
 
         return result;

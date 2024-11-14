@@ -11,6 +11,7 @@ public:
     FileHandling();
     ~FileHandling();
 
+    std::string readFileToString(const std::string&);
     int saveToTXT(txtPreset txt);
 
 private:

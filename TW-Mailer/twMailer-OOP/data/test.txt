@@ -1,8 +1,6 @@
 {
-0
-test
-0
-test
-test
-test
+sender
+subject
+message
+
 }

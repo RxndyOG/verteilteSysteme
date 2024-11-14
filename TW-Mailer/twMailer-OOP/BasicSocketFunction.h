@@ -20,6 +20,7 @@ public:
     void parseInfoString(txtPreset* tp);
     void infoStringCalc(txtPreset* tp);
     int recvParse(std::string arg, int socket, txtPreset *tp);
+    int recvParseClient(int socket, txtPreset *tp);
 
     void sendFunctBasic(int i, std::string arg);
 
