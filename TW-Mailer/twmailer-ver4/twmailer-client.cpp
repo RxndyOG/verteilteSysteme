@@ -19,7 +19,14 @@ struct TextPreset SENDInput(struct TextPreset tp)
 {
 
     std::cout << "sender: ";
-    std::getline(std::cin, tp.sender);
+    if(tp.username == ""){
+        std::getline(std::cin, tp.sender);
+        tp.username = tp.sender;
+    }else{
+        tp.sender = tp.username;
+        std::cout << tp.username << std::endl;
+    }
+    
     std::cout << "subject: ";
     std::getline(std::cin, tp.subject);
     std::string currentMESS = "";
@@ -55,13 +62,16 @@ void recvLISTprint(int clientSocket)
 struct TextPreset READinput(struct TextPreset tp)
 {
     std::cout << "Username: ";
-    std::getline(std::cin, tp.username);
+    if(tp.username == ""){
+        std::getline(std::cin, tp.username);
+    }else{
+        std::cout << tp.username << std::endl;
+    }
+    
     std::cout << "ID: ";
     std::string tempID;
     std::getline(std::cin, tempID);
     tp.ID = std::stoi(tempID);
-
-    std::cout << "username: " << tp.username << std::endl;
     return tp;
 }
 
@@ -86,19 +96,25 @@ struct TextPreset sendLISTuser(int clientSocket, struct TextPreset tp)
 struct TextPreset LISTinput(struct TextPreset tp)
 {
     std::cout << "username: ";
-    std::getline(std::cin, tp.username);
+    if(tp.username == ""){
+        std::getline(std::cin, tp.username);
+    }else{
+        std::cout << tp.username << std::endl;
+    }
     return tp;
 }
 
 // verarbeitet den Input vom user Also was er gewählt hat ob SEND, LIST, READ etc...
-int userINPUTfindOpt(int clientSocket)
+int userINPUTfindOpt(int clientSocket, std::string username)
 {
     std::string input = "";
     struct TextPreset tpInput = resetTP({});
+    tpInput.username = username;
     std::getline(std::cin, input);
     if (input.substr(0, 4) == "SEND")
     {
         tpInput = SENDInput(tpInput);
+
         tpInput = basicFunktions().calcINFOstring(tpInput, SEND);
         basicFunktions().sendINFOstring(clientSocket, tpInput);
         if (tpInput.packageNUM == 1){
@@ -238,25 +254,27 @@ int main(int argc, char *argv[])
         close(clientSocket);
         return 2;
     }
+    std::string username = "";
+    do{
+    std::cout << "Enter Username: " << std::endl;
+    getline(std::cin, username); 
+    }while(username == "EMPTYSTRINGUSERNAME");
 
     std::cout << "listening on Port: " << argv[2] << std::endl;
 
     // Receive data from the serve
-    char buffer[1024] = {0};
-    int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
-    buffer[errRecv] = '\0';
-    if (errRecv == -1)
-    {
-        std::cout << "error happened during recv from server" << std::endl;
-    }
+    std::cout << basicFunktions().recvFunctBasic(clientSocket) << std::endl;
+    if(username == ""){username = "EMPTYSTRINGUSERNAME";}
+    basicFunktions().sendFunctBasic(clientSocket, username);
     int startINPUT;
+    if(username == "EMPTYSTRINGUSERNAME"){username = "";}
 
     do
     {
         std::cout << "\n --------- Open Terminal ----------" << std::endl;
         std::cout << "[SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
 
-        startINPUT = userINPUTfindOpt(clientSocket);
+        startINPUT = userINPUTfindOpt(clientSocket, username);
 
     } while (startINPUT != QUIT);
 

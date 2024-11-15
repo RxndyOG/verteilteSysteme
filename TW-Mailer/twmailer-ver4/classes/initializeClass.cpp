@@ -8,6 +8,7 @@
 #include "parseClass.h"
 #include "sendMESSclass.h"
 #include "basicFunktions.h"
+#include "FileHandeling.h"
 
 initializeClass::initializeClass()
 {
@@ -71,10 +72,15 @@ void initializeClass::initializeDEL(TextPreset tp, int clientSocket, std::vector
     tp = parseClass().parseREAD(tp, std::string(buffer));
 
     if (static_cast<long unsigned int>(tp.ID) <= n.size()){
-        if (tp.username == n[tp.ID].sender){
+        if (tp.username == n[tp.ID].username){
             n.erase(n.begin() + tp.ID);
             std::cout << "email deleted" << std::endl;
             send(clientSocket, "OK\n", sizeof("OK\n"), 0);
+            FileHandeling().clearFile(tp);
+            for(auto &ch : n){
+                FileHandeling().saveToTXT(ch);
+            }
+
             return;
         }
         else{
@@ -88,12 +94,16 @@ void initializeClass::initializeDEL(TextPreset tp, int clientSocket, std::vector
         send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
         return;
     }
+
+
+
 }
 
 void initializeClass::initializeSENDSAVE(TextPreset tp, int clientSocket, std::vector<TextPreset> &n)
 {
     std::string buffer = recvINIT(clientSocket);
     tp = parseClass().parseSEND(tp, buffer);
+    FileHandeling().saveToTXT(tp);
     n.push_back(tp);
 }
 
@@ -116,14 +126,14 @@ void initializeClass::initializeSENDSAVE_Packages(TextPreset tp, int clientSocke
 {
     std::string completeMessage = initPackages(tp, clientSocket);
     tp = parseClass().parseSEND(tp, completeMessage);
+    FileHandeling().saveToTXT(tp);
     n.push_back(tp);
 }
 
 void outputTP(TextPreset tp){
-    std::cout << tp.argument << std::endl;
-    std::cout << tp.sender << std::endl;
-    std::cout << tp.subject << std::endl;
-    std::cout << tp.text << std::endl;
+    std::cout << "Sender: " << tp.sender << std::endl;
+    std::cout << "Subject: " << tp.subject << std::endl;
+    std::cout << "Message: " << tp.text << std::endl;
 }
 
 void initializeClass::initializeSENDSAVEClient(TextPreset tp, int clientSocket)

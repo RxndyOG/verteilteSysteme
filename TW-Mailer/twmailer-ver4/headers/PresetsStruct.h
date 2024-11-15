@@ -21,6 +21,7 @@ struct TextPreset
     int ID;
     std::string username;
     std::string infoString;
+    std::string fileLocal;
 };
 
 // Enum, der dem Server bzw. User sagt, welchen Typ die Nachricht hat

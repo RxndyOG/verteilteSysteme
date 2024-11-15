@@ -13,6 +13,21 @@ basicFunktions::~basicFunktions()
 {
 }
 
+std::string basicFunktions::recvFunctBasic(int clientSocket){
+    char buffer[1024] = {0};
+    int errRecv = recv(clientSocket, buffer, sizeof(buffer), 0);
+    buffer[errRecv] = '\0';
+    if (errRecv == -1)
+    {
+        std::cout << "error happened during recv from server" << std::endl;
+    }
+    return buffer;
+}
+
+void basicFunktions::sendFunctBasic(int clientSocket, std::string text){
+    send(clientSocket, text.c_str(), text.size() , 0);
+}  
+
 int calcPackageNUM(std::string tempString)
 {
     if (tempString.size() <= static_cast<long unsigned int>(_blockSIZE)){return 1;}else{
@@ -51,28 +66,28 @@ TextPreset basicFunktions::calcINFOstring(TextPreset tp, int type)
         tempString = tempString + tp.argument + "\n" + tp.sender + "\n" + tp.subject + "\n" + tp.text + "\n";
         tp.length = tempString.size();
         tp.packageNUM = calcPackageNUM(tempString);
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n" + tp.username + "\n";
         break;
     case READ:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
         tp.length = tempString.size();
         tp.packageNUM = calcPackageNUM(tempString);
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n" + tp.username + "\n";
         break;
     case QUIT:
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(1) + "\n" + std::to_string(1) + "\n";
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(1) + "\n" + std::to_string(1) + "\n" + tp.username + "\n";
         break;
     case LIST:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
         tp.length = tempString.size();
         tp.packageNUM = calcPackageNUM(tempString);
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n" + tp.username + "\n";
         break;
     default:
         tempString = tempString + tp.username + "\n" + std::to_string(tp.ID) + "\n";
         tp.length = tempString.size();
         tp.packageNUM = calcPackageNUM(tempString);
-        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n";
+        tp.infoString = tp.infoString + std::to_string(tp.type) + "\n" + std::to_string(tp.packageNUM) + "\n" + std::to_string(tp.length) + "\n" + tp.username + "\n";
         break;
     }
 

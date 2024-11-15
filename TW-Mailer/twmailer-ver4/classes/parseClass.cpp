@@ -166,6 +166,8 @@ TextPreset parseClass::parseINFO(TextPreset tp, std::string info){
             case 2:
                 tp.length = std::stoi(parseTemp);
                 break;
+            case 3:
+                tp.username = parseTemp;
             default:
 
                 break;

@@ -19,5 +19,6 @@ TextPreset resetTP(TextPreset tp)
     tp.error = false;
     tp.ID = 0;
     tp.username = "";
+    tp.fileLocal = "";
     return tp;
 }
