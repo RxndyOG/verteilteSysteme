@@ -3,8 +3,3 @@ sender
 test
 test.
 }
-{
-sender
-subjct
-msg.
-}

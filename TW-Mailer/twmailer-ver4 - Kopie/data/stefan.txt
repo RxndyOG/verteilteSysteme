@@ -3,6 +3,7 @@ stefan
 test
 test.
 }
+<<<<<<< HEAD
 {
 stefan
 subjct
@@ -18,3 +19,5 @@ stefan
 subjuct
 msg.
 }
+=======
+>>>>>>> 5e70a62e312fe16cd454718218942d2ed510718f

@@ -43,6 +43,7 @@ int basicFunktions::sendINFOstring(int clientSocket, TextPreset tp)
     char buffer[1024] = {0};
     int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[errRCV] = '\0';
+
     if (errRCV == -1){std::cout << "Error in sendINFOstring" << std::endl;}
 
     if (std::string(buffer) == "ERR\n"){
