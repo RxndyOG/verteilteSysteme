@@ -13,6 +13,7 @@
 #include "classes/initializeClass.h"
 #include "classes/sendMESSclass.h"
 #include "classes/basicFunktions.h"
+#include "classes/FileHandeling.h"
 
 // sended den LIST string für den User
 void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n, struct TextPreset tp)
@@ -25,7 +26,7 @@ void LISTsendFunct(int clientSocket, std::vector<struct TextPreset> &n, struct T
 
     for (int i = 0; i < totalAmmountMESS; i++)
     {
-        if (n[i].sender == tp.sender)
+        if (n[i].username == tp.sender)
         {
             LISTstring = LISTstring + std::to_string(i) + "\n" + n[i].sender + "\n" + n[i].subject + "\n" + n[i].text.substr(0, 10) + "\n";
             sendUSERLIST = true;
@@ -90,11 +91,12 @@ struct TextPreset recvLISTstring(struct TextPreset tp, int clientSocket)
 }
 
 // wird benutzt um zu testen was der User als option ausgewählt hat. Also SEND, READ, etc...
-int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
+int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n, std::string local)
 {
 
     struct TextPreset tpRECV;
     tpRECV = resetTP(tpRECV);
+    tpRECV.fileLocal = local;
     char buffer[1024] = {0};
     int errRCV = recv(clientSocket, buffer, sizeof(buffer), 0);
     buffer[errRCV] = '\0';
@@ -129,6 +131,7 @@ int recvFromClient(int clientSocket, std::vector<struct TextPreset> &n)
         if (n.size() == 0)
         {
             send(clientSocket, "ERR\n", sizeof("ERR\n"), 0);
+            return LIST;
         }
         else
         {
@@ -231,11 +234,23 @@ int main(int argc, char *argv[])
     getsockname(clientSocket, (struct sockaddr *)&serverAddr, &serverAddrLen);
     char serverIP[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(serverAddr.sin_addr), serverIP, INET_ADDRSTRLEN);
+    
+    std::string username = basicFunktions().recvFunctBasic(clientSocket);
 
+    if(username == "EMPTYSTRINGUSERNAME"){
+        username = "";
+        std::cout << "anonimous user" << std::endl;
+    }else{
+        std::string arg = FileHandeling().readFileToString(argv[2], username);
+        savedMSG = FileHandeling().parseFile(arg);
+
+    }
+
+    
     int cancell;
     do
     {
-        cancell = recvFromClient(clientSocket, savedMSG);
+        cancell = recvFromClient(clientSocket, savedMSG, argv[2]);
     } while (cancell != QUIT);
 
     std::cout << "client closed server" << std::endl;
