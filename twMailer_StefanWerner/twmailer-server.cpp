@@ -2,8 +2,6 @@
 #include <fstream>
 #include <thread>
 #include <vector>
-#include <unordered_map>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <netinet/in.h>
@@ -18,7 +16,6 @@
 #include "classes/fileHandeling.h"
 #include "classes/messageClass.h"
 
-std::mutex mtx;
 
 #define _BLOCK_SIZE 1024
 
