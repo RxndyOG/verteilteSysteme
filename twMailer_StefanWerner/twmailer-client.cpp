@@ -122,7 +122,7 @@ void client_loop(int socket_fd)
         std::cout << " [SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
         std::getline(std::cin, input);
         if (input.substr(0, 4) == "SEND")   // how send works here is pretty simple sends the server the SEND protocoll name, //send the info string // recv the OK or ERR from server // send the message
-        {                                            
+        {                   // SEND -> SEND infoString sent -> OK or ERR from server -> sending entire message      
             input = "SEND";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -139,8 +139,8 @@ void client_loop(int socket_fd)
 
             continue;
         }
-        if (input.substr(0, 4) == "READ")
-        {
+        if (input.substr(0, 4) == "READ")       
+        {                   // READ -> READ infoString -> OK or ERR from server -> sent id -> OK or ERR from server -> sent OK to server -> OK or ERR from server -> recv long message from server
             input = "READ";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -181,7 +181,7 @@ void client_loop(int socket_fd)
             continue;
         }
         if (input.substr(0, 4) == "LIST")
-        {
+        {               // LIST -> OK or ERR from server -> OK sent to server -> OK or ERR from server -> OK or ERR from server -> sent OK to server -> recv long message
             input = "LIST";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -235,7 +235,7 @@ void client_loop(int socket_fd)
             continue;
         }
         if (input.substr(0,4) == "DEL")
-        {
+        {               // sent DEL -> send DEL infoString -> OK or ERR from server -> sent ID -> OK or ERR from server
             input = "DEL";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -261,7 +261,7 @@ void client_loop(int socket_fd)
             continue;
         }
         if (input.substr(0,4) == "QUIT")
-        {
+        {               // QUIT -> client stoped -> server closes thread
             input = "QUIT";
             send(socket_fd, input.c_str(), input.size(), 0);
             std::cout << "Quiting in Process" << std::endl;
