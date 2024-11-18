@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 
+
 #include "headers/PresetStruct.h"
 #include "classes/parseClass.h"
 #include "classes/fileHandeling.h"

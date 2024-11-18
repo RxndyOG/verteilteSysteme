@@ -31,8 +31,19 @@ TEXTpreset userInputClass::SENDInput(LOGINpreset lp)
     std::cout << "sender: ";
     tp.sender = lp.username;
     std::cout << tp.sender << std::endl;
-    std::cout << "subject: ";
+    do{
+    std::cout << "subject (Max: 80 chars): ";
     std::getline(std::cin, tp.subject);
+    if(tp.subject.size() > 80){
+        std::cout << "You entered more than 80 Chars !\n" << "Do you want to enter another subject or are you ok with your Subject being cut down?\n" << "[[y] Yes cut down / [n] No let me redo it]" <<std::endl;
+        std::string inputError;
+        std::getline(std::cin, inputError);
+        if(inputError.substr(0,1) == "y" || inputError.substr(0,4) == "Y"){
+            tp.subject = tp.subject.substr(0.80);
+            break;
+        }
+    }
+    }while(tp.subject.size() > 80);
     std::string currentMESS = "";
     std::cout << "message: ";
     do
