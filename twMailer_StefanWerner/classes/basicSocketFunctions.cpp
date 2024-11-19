@@ -63,6 +63,9 @@ std::string basicSocketFunctions::RCV_and_PARSE_serverResponse(int socked_fd) //
     }
     else
     {
+        if(buff == "TIME"){
+            return "TIME";
+        }
         return "ERR";
     }
     return "ERR";

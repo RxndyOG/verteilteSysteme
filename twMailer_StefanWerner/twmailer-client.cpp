@@ -4,18 +4,43 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <vector>
+#include <chrono>
+#include <future>
+#include <thread>
+#include <csignal>
 
-#define _BLOCK_SIZE 1024   
+#define _BLOCK_SIZE 1024
 
-#include "headers/PresetStruct.h"           //has all structs and maybe enum not sure yet
-#include "classes/parseClass.h"             //has all parse methods
-#include "classes/messageClass.h"           //has all message functions (sending to server and recv from server messages)
-#include "classes/userInputClass.h"         //has all user input functions ( getline() etc...)
-#include "classes/basicSocketFunctions.h"   //has all the recv() and send(), and parses from server or client
+#include "headers/PresetStruct.h"         //has all structs and maybe enum not sure yet
+#include "classes/parseClass.h"           //has all parse methods
+#include "classes/messageClass.h"         //has all message functions (sending to server and recv from server messages)
+#include "classes/userInputClass.h"       //has all user input functions ( getline() etc...)
+#include "classes/basicSocketFunctions.h" //has all the recv() and send(), and parses from server or client
 
-void client_loop(int socket_fd)     // client app
+bool isTimedOut = false;
+
+int cSocket;
+
+void handleSigint(int sig) {
+    (void) sig;  // Kennzeichne 'sig' als nicht verwendet
+    std::string quit = "QUIT";
+    send(cSocket, quit.c_str(), quit.size(), 0);
+    std::cout << "Closed connection" << std::endl; 
+    exit(1);
+}
+
+void timerFunction(int seconds) {
+    for (int i = seconds; i > 0; --i) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if(i%10 == 0){std::cout << "Time out remain: " << i << std::endl;}
+    }
+    isTimedOut = false;
+    std::cout << "You are no longer Timed Out" << std::endl;
+}
+
+void client_loop(int socket_fd) // client app
 {
-
+    
     char buffer[1024] = {};
     std::string input = "";
 
@@ -25,8 +50,11 @@ void client_loop(int socket_fd)     // client app
     LOGINpreset lp;
     recvReturn bufferErr;
 
-    do  // when the user isnt loggen in this is shown
+    std::signal(SIGINT, handleSigint);
+
+    do // when the user isnt loggen in this is shown
     {
+
         std::cout << "\n ------- OPEN TERMINAL -------" << std::endl;
         std::cout << " [LOGIN] [QUIT]" << std::endl;
         std::getline(std::cin, input);
@@ -39,34 +67,56 @@ void client_loop(int socket_fd)     // client app
         }
         if (input == "LOGIN")
         {
+
+            if (isTimedOut == true)
+            {
+                std::cout << "You are timed out" << std::endl;
+                input = "";
+                continue;
+            }
+
             send(socket_fd, input.c_str(), input.size(), 0);
             lp = userInputClass().LOGINinput();
             std::string LOGINstring = lp.username + "\n" + lp.pwd + "\n";
             send(socket_fd, LOGINstring.c_str(), LOGINstring.size(), 0);
-            if (basicSocketFunctions().RCV_and_PARSE_serverResponse(socket_fd) == "ERR")
+
+            std::string LOGINerr = basicSocketFunctions().RCV_and_PARSE_serverResponse(socket_fd);
+            if (LOGINerr == "ERR")
             {
                 input = "";
                 std::cout << "You are not Autherized" << std::endl;
-                std::cout << "You may have to wait if you inputed more than 3 incorrect passwords" << std::endl;
-                
+                isTimedOut = false;
+            }
+            if (LOGINerr == "TIME")
+            {
+                input = "";
+                std::cout << "You are timed out for 1 minute!" << std::endl;
+
+                isTimedOut = true;
+                auto timerFuture = std::async(std::launch::async, timerFunction, 60);
+                continue;
+            }
+            else
+            {
+                isTimedOut = false;
             }
         }
     } while (input != "LOGIN");
 
-    while (true)    // user is loggen in
+    while (true) // user is loggen in
     {
         TEXTpreset tp;
         std::string input = "";
         std::cout << "\n ------- OPEN TERMINAL -------" << std::endl;
         std::cout << " [SEND] [READ] [LIST] [DEL] [QUIT]" << std::endl;
         std::getline(std::cin, input);
-        if (input.substr(0, 4) == "SEND")   // how send works here is pretty simple sends the server the SEND protocoll name, //send the info string // recv the OK or ERR from server // send the message
-        {                   // SEND -> SEND infoString sent -> OK or ERR from server -> sending entire message      
+        if (input.substr(0, 4) == "SEND") // how send works here is pretty simple sends the server the SEND protocoll name, //send the info string // recv the OK or ERR from server // send the message
+        {                                 // SEND -> SEND infoString sent -> OK or ERR from server -> sending entire message
             input = "SEND";
             send(socket_fd, input.c_str(), input.size(), 0);
 
-            tp = userInputClass().SENDInput(lp);                     // ask user for message. tp.sender is sender, tp.subject = subject of message, tp.message is message
-            INFOpreset ip = basicSocketFunctions().SEND_and_CALC_infoString(tp, socket_fd);    // "calulates" and sends the info string
+            tp = userInputClass().SENDInput(lp);                                            // ask user for message. tp.sender is sender, tp.subject = subject of message, tp.message is message
+            INFOpreset ip = basicSocketFunctions().SEND_and_CALC_infoString(tp, socket_fd); // "calulates" and sends the info string
 
             if (basicSocketFunctions().RCV_and_PARSE_serverResponse(socket_fd) == "ERR")
             {
@@ -78,8 +128,8 @@ void client_loop(int socket_fd)     // client app
 
             continue;
         }
-        if (input.substr(0, 4) == "READ")       
-        {                   // READ -> READ infoString -> OK or ERR from server -> sent id -> OK or ERR from server -> sent OK to server -> OK or ERR from server -> recv long message from server
+        if (input.substr(0, 4) == "READ")
+        { // READ -> READ infoString -> OK or ERR from server -> sent id -> OK or ERR from server -> sent OK to server -> OK or ERR from server -> recv long message from server
             input = "READ";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -102,13 +152,18 @@ void client_loop(int socket_fd)     // client app
                 std::cout << "ID does not exist or is out of scope" << std::endl;
                 continue;
             }
-            
+
             std::string OK = "OK";
             send(socket_fd, OK.c_str(), OK.size(), 0);
 
-            bufferErr= basicSocketFunctions().recvFunctBasic(socket_fd);
-            if(bufferErr.err == -1){std::cout << "Error in SERVER response in READ" << std::endl; close(socket_fd); break;}
-            
+            bufferErr = basicSocketFunctions().recvFunctBasic(socket_fd);
+            if (bufferErr.err == -1)
+            {
+                std::cout << "Error in SERVER response in READ" << std::endl;
+                close(socket_fd);
+                break;
+            }
+
             INFOpreset ip = parseClass().parseINFO(bufferErr.buffer);
             std::string sendMSG = messageClass().receiveLongMessage(socket_fd, ip);
             TEXTpreset tp = parseClass().parseSEND(sendMSG);
@@ -120,7 +175,7 @@ void client_loop(int socket_fd)     // client app
             continue;
         }
         if (input.substr(0, 4) == "LIST")
-        {               // LIST -> OK or ERR from server -> OK sent to server -> OK or ERR from server -> OK or ERR from server -> sent OK to server -> recv long message
+        { // LIST -> OK or ERR from server -> OK sent to server -> OK or ERR from server -> OK or ERR from server -> sent OK to server -> recv long message
             input = "LIST";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -134,8 +189,13 @@ void client_loop(int socket_fd)     // client app
             std::string OK = "OK";
             send(socket_fd, OK.c_str(), OK.size(), 0);
 
-            bufferErr= basicSocketFunctions().recvFunctBasic(socket_fd);
-            if(bufferErr.err == -1){std::cerr << "Error or connection closed while receiving entry count." << std::endl; close(socket_fd); break;}
+            bufferErr = basicSocketFunctions().recvFunctBasic(socket_fd);
+            if (bufferErr.err == -1)
+            {
+                std::cerr << "Error or connection closed while receiving entry count." << std::endl;
+                close(socket_fd);
+                break;
+            }
 
             std::string buff(bufferErr.buffer);
 
@@ -143,7 +203,10 @@ void client_loop(int socket_fd)     // client app
             try
             {
                 entries = std::stoi(buff);
-                if(entries == 0){std::cout << "No elements to List" << std::endl;}
+                if (entries == 0)
+                {
+                    std::cout << "No elements to List" << std::endl;
+                }
             }
             catch (std::exception &e)
             {
@@ -151,15 +214,20 @@ void client_loop(int socket_fd)     // client app
                 continue;
             }
 
-            std::cout << "You have " << entries<< " entries." << std::endl;
+            std::cout << "You have " << entries << " entries." << std::endl;
 
             int i = 0;
             for (int n = 0; n < entries; ++n)
             {
 
-                bufferErr= basicSocketFunctions().recvFunctBasic(socket_fd);
-                if(bufferErr.err == -1){std::cerr << "Error or connection closed while receiving INFO string." << std::endl; close(socket_fd); break;}
-    
+                bufferErr = basicSocketFunctions().recvFunctBasic(socket_fd);
+                if (bufferErr.err == -1)
+                {
+                    std::cerr << "Error or connection closed while receiving INFO string." << std::endl;
+                    close(socket_fd);
+                    break;
+                }
+
                 std::string infoString(bufferErr.buffer);
 
                 INFOpreset ip = parseClass().parseINFO(infoString);
@@ -176,8 +244,8 @@ void client_loop(int socket_fd)     // client app
             }
             continue;
         }
-        if (input.substr(0,4) == "DEL")
-        {               // sent DEL -> send DEL infoString -> OK or ERR from server -> sent ID -> OK or ERR from server
+        if (input.substr(0, 4) == "DEL")
+        { // sent DEL -> send DEL infoString -> OK or ERR from server -> sent ID -> OK or ERR from server
             input = "DEL";
             send(socket_fd, input.c_str(), input.size(), 0);
 
@@ -202,8 +270,8 @@ void client_loop(int socket_fd)     // client app
             }
             continue;
         }
-        if (input.substr(0,4) == "QUIT")
-        {               // QUIT -> client stoped -> server closes thread
+        if (input.substr(0, 4) == "QUIT")
+        { // QUIT -> client stoped -> server closes thread
             input = "QUIT";
             send(socket_fd, input.c_str(), input.size(), 0);
             std::cout << "Quiting in Process" << std::endl;
@@ -247,6 +315,8 @@ int main(int argc, char *argv[])
         perror("Socket creation failed");
         return 1;
     }
+
+    cSocket = socket_fd;
 
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;

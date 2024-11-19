@@ -54,6 +54,8 @@
         "condition_variable": "cpp",
         "fstream": "cpp",
         "mutex": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "future": "cpp",
+        "csignal": "cpp"
     }
 }

@@ -5,6 +5,8 @@
 #include <string>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <chrono>
+#include <future>
 
 #include "headers/PresetStruct.h"           //has all structs and maybe enum not sure yet
 #include "classes/parseClass.h"             //has all parse methods
@@ -28,11 +30,26 @@ std::string recvQuitLogin(int client_socket)    // gets the LOGIn and QUIT recv 
     return buffer;
 }
 
+
+
 void handle_client(int client_socket, std::string dataLocal)    // client thread
 {
     bool isLoggedIn = false;
     LOGINpreset lp;
     int index = 0;
+    bool isTimedOut = false;
+
+    auto timerFunction = [&](int seconds) {
+        std::string falseInputLocal;
+
+        std::this_thread::sleep_for(std::chrono::seconds(seconds));
+
+        falseInputLocal = "." + dataLocal;
+        fileHandeling().clearFile(falseInputLocal, lp.username);
+        isTimedOut = false;
+        std::cout << "Timeout für Client beendet.\n";
+    };
+
     do  // whilw user isnt logged in
     {
         std::string buffer = recvQuitLogin(client_socket);
@@ -53,14 +70,22 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
             {
                 return;
             }
+            if(loginString == "QUIT"){
+                std::cout << "Client closed Connection" << std::endl;
+                return;
+            }
 
             lp = parseClass().parseLOGIN(loginString);
 
-            if (fileHandeling().readLoginFailures(dataLocal, lp.username) > 2)
+            if (fileHandeling().readLoginFailures(dataLocal, lp.username) > 1)
             {
                 std::cout << "To many Failed attemps!" << std::endl;
-                std::string ERR = "ERR";
-                send(client_socket, ERR.c_str(), ERR.size(), 0);
+                std::string TIME = "TIME";
+                send(client_socket, TIME.c_str(), TIME.size(), 0);
+
+                isTimedOut = true;
+                std::thread(timerFunction, 60).detach();
+                
                 continue;
             }
 
@@ -116,6 +141,10 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
                 close(client_socket);
                 break;
             }
+            if(bufferErr.buffer == "QUIT"){
+                std::cout << "Client closed Connection" << std::endl;
+                return;
+            }
 
             INFOpreset ip = parseClass().parseINFO(bufferErr.buffer);
             std::string OK = "OK";
@@ -137,6 +166,10 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
                 close(client_socket);
                 break;
             }
+            if(bufferErr.buffer == "QUIT"){
+                std::cout << "Client closed Connection" << std::endl;
+                return;
+            }
 
             INFOpreset ip = parseClass().parseINFO(bufferErr.buffer);
 
@@ -149,6 +182,10 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
                 std::cout << "Error in client ID in READ" << std::endl;
                 close(client_socket);
                 break;
+            }
+            if(bufferErr.buffer == "QUIT"){
+                std::cout << "Client closed Connection" << std::endl;
+                return;
             }
 
             std::string id = bufferErr.buffer;
@@ -254,6 +291,10 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
                 close(client_socket);
                 break;
             }
+            if(bufferErr.buffer == "QUIT"){
+                std::cout << "Client closed Connection" << std::endl;
+                return;
+            }
 
             parseClass().parseINFO(bufferErr.buffer);
 
@@ -265,6 +306,10 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
             {
                 close(client_socket);
                 break;
+            }
+            if(bufferErr.buffer == "QUIT"){
+                std::cout << "Client closed Connection" << std::endl;
+                return;
             }
 
             std::string id = bufferErr.buffer;
