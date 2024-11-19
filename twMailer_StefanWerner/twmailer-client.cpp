@@ -204,6 +204,7 @@ void client_loop(int socket_fd)
             try
             {
                 entries = std::stoi(buff);
+                if(entries == 0){std::cout << "No elements to List" << std::endl;}
             }
             catch (std::exception &e)
             {

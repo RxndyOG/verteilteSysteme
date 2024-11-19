@@ -16,6 +16,16 @@
 #include "classes/fileHandeling.h"
 #include "classes/messageClass.h"
 
+/*
+
+LDAP muss noch eingefügt werden und mit login verbunden werden
+
+client 3 time wrong password muss in login noch eingefügtwerden
+
+synchronizted???? keine ahnung was damit gemeint
+sollte passen ? ich weißm nicht was sonst mit synchronization gemeint ist
+
+*/
 
 #define _BLOCK_SIZE 1024
 
