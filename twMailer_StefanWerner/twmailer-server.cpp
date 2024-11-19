@@ -1,42 +1,21 @@
 #include <iostream>
-#include <fstream>
 #include <thread>
 #include <vector>
 #include <sstream>
 #include <string>
 #include <netinet/in.h>
 #include <unistd.h>
-#include <cstring>
-#include <algorithm>
-#include <cmath>
 
-#include "headers/PresetStruct.h"
-#include "classes/parseClass.h"
-#include "classes/fileHandeling.h"
-#include "classes/messageClass.h"
-#include "classes/ldapClass.h"
+#include "headers/PresetStruct.h"           //has all structs and maybe enum not sure yet
+#include "classes/parseClass.h"             //has all parse methods
+#include "classes/fileHandeling.h"          //has all the file handeling functions (safe to file, read from file, clear file etc...)
+#include "classes/messageClass.h"           //has all message functions (sending to server and recv from server messages)
+#include "classes/ldapClass.h"              //has all the ldap functions (momentan eine)
+#include "classes/basicSocketFunctions.h"   //has all the recv() and send(), and parses from server or client
 
 #define _BLOCK_SIZE 1024
 
-recvReturn recvFunctBasic(int client_socket)
-{
-    recvReturn rr;
-    char buffer[1024] = {};
-    memset(buffer, 0, sizeof(buffer));
-    int err = recv(client_socket, buffer, sizeof(buffer), 0);
-    if (err == -1)
-    {
-        rr.buffer = "ERR";
-        rr.err = err;
-        return rr;
-    }
-    buffer[err] = '\0';
-    rr.buffer = buffer;
-    rr.err = err;
-    return rr;
-}
-
-std::string recvQuitLogin(int client_socket)
+std::string recvQuitLogin(int client_socket)    // gets the LOGIn and QUIT recv when user isnt logged in
 {
     char buffer[1024] = {};
     int err = recv(client_socket, buffer, sizeof(buffer), 0);
@@ -49,46 +28,12 @@ std::string recvQuitLogin(int client_socket)
     return buffer;
 }
 
-INFOpreset SEND_and_CALC_infoString(TEXTpreset tp, int socked_fd)
-{
-    std::string infoString = "";
-    INFOpreset ip;
-    ip.textLength = tp.sender.size() + 1 + tp.subject.size() + 1 + tp.message.size() + 1;
-    float result = static_cast<float>(ip.textLength) / (_BLOCK_SIZE - 1);
-    ip.numPack = std::ceil(result);
-    infoString = std::to_string(ip.textLength) + "\n" + std::to_string(ip.numPack) + "\n";
-    send(socked_fd, infoString.c_str(), infoString.size(), 0);
-    return ip;
-}
-
-std::string RCV_and_PARSE_serverResponse(int socked_fd)
-{
-    char buffer[1024] = {};
-    int err = recv(socked_fd, buffer, sizeof(buffer), 0);
-    if (err == -1)
-    {
-        std::cout << "error in RCV_and_PARSE_serverResponse()" << std::endl;
-        return "ERR";
-    }
-    buffer[err] = '\0';
-    std::string buff = buffer;
-    if (buff == "OK")
-    {
-        return "OK";
-    }
-    else
-    {
-        return "ERR";
-    }
-    return "ERR";
-}
-
-void handle_client(int client_socket, std::string dataLocal)
+void handle_client(int client_socket, std::string dataLocal)    // client thread
 {
     bool isLoggedIn = false;
     LOGINpreset lp;
     int index = 0;
-    do
+    do  // whilw user isnt logged in
     {
         std::string buffer = recvQuitLogin(client_socket);
         if (buffer == "ERR")
@@ -147,9 +92,9 @@ void handle_client(int client_socket, std::string dataLocal)
         }
     } while (!isLoggedIn);
 
-    while (true)
+    while (true)      // user is logged in
     {
-        recvReturn bufferErr = recvFunctBasic(client_socket);
+        recvReturn bufferErr = basicSocketFunctions().recvFunctBasic(client_socket);
         if (bufferErr.err == -1)
         {
             close(client_socket);
@@ -160,13 +105,14 @@ void handle_client(int client_socket, std::string dataLocal)
         std::string operation;
         iss >> operation;
 
-        if (operation == "SEND")
+        if (operation == "SEND")    // recv SEND command from user -> recv info string -> send OK or ERR -> recv long message
         {
             std::cout << "SEND" << std::endl;
 
-            bufferErr = recvFunctBasic(client_socket);
+            bufferErr = basicSocketFunctions().recvFunctBasic(client_socket);
             if (bufferErr.err == -1)
             {
+                std::cout << "Error in client info string in SEND" << std::endl;
                 close(client_socket);
                 break;
             }
@@ -180,13 +126,14 @@ void handle_client(int client_socket, std::string dataLocal)
 
             fileHandeling().SAFE_to_File(dataLocal, lp.username, tp);
         }
-        else if (operation == "READ")
-        {
+        else if (operation == "READ")       // recv READ from client -> recv info string from user -> send OK or ERR -> recv ID for READ from client -> 
+        {                                   // read files -> send OK or ERR if existing -> recv OK or ERR from client -> send READ file
             std::cout << "READ" << std::endl;
 
-            bufferErr = recvFunctBasic(client_socket);
+            bufferErr = basicSocketFunctions().recvFunctBasic(client_socket);
             if (bufferErr.err == -1)
             {
+                std::cout << "Error in sent info string from client" << std::endl;
                 close(client_socket);
                 break;
             }
@@ -196,9 +143,10 @@ void handle_client(int client_socket, std::string dataLocal)
             std::string OK = "OK";
             send(client_socket, OK.c_str(), OK.size(), 0);
 
-            bufferErr = recvFunctBasic(client_socket);
+            bufferErr = basicSocketFunctions().recvFunctBasic(client_socket);
             if (bufferErr.err == -1)
             {
+                std::cout << "Error in client ID in READ" << std::endl;
                 close(client_socket);
                 break;
             }
@@ -244,18 +192,18 @@ void handle_client(int client_socket, std::string dataLocal)
                 send(client_socket, OK.c_str(), OK.size(), 0);
             }
 
-            if (RCV_and_PARSE_serverResponse(client_socket) == "ERR")
+            if (basicSocketFunctions().RCV_and_PARSE_serverResponse(client_socket) == "ERR")
             {
                 std::cout << "ID does not exist or is out of scope" << std::endl;
                 continue;
             }
 
-            ip = SEND_and_CALC_infoString(readFiles[idNUM], client_socket); // calc and send info string
+            ip = basicSocketFunctions().SEND_and_CALC_infoString(readFiles[idNUM], client_socket); // calc and send info string
             messageClass().sendLongMessage(readFiles[idNUM], ip, client_socket);
 
             continue;
         }
-        else if (operation == "LIST")
+        else if (operation == "LIST")   // recv LIST from client -> read files -> send OK or ERR when files not existing -> send amount of files -> recv OK or ERR -> send files
         {
             std::cout << "LIST" << std::endl;
 
@@ -273,7 +221,7 @@ void handle_client(int client_socket, std::string dataLocal)
                 send(client_socket, OK.c_str(), OK.size(), 0);
             }
 
-            if (RCV_and_PARSE_serverResponse(client_socket) == "ERR")
+            if (basicSocketFunctions().RCV_and_PARSE_serverResponse(client_socket) == "ERR")
             {
                 std::cout << "Not enough Elements in LIST! 0 Entries" << std::endl;
                 continue;
@@ -286,10 +234,10 @@ void handle_client(int client_socket, std::string dataLocal)
             for (auto &entry : readFiles)
             {
                 entry.message = entry.message.substr(0, 10);
-                INFOpreset ip = SEND_and_CALC_infoString(entry, client_socket); // calc and send info string
-                if (RCV_and_PARSE_serverResponse(client_socket) == "ERR")
+                INFOpreset ip = basicSocketFunctions().SEND_and_CALC_infoString(entry, client_socket); // calc and send info string
+                if (basicSocketFunctions().RCV_and_PARSE_serverResponse(client_socket) == "ERR")
                 {
-                    std::cout << "Error in RCV" << std::endl;
+                    std::cout << "Error in client Response in LIST" << std::endl;
                     continue;
                 }
                 messageClass().sendLongMessage(entry, ip, client_socket);
@@ -297,10 +245,10 @@ void handle_client(int client_socket, std::string dataLocal)
             }
             continue;
         }
-        else if (operation == "DEL")
+        else if (operation == "DEL")            // recv DEL from client -> send OK to client -> recv ID from client -> send OK or ERR to client -> read all files -> delete wanted ID -> send OK to client if deleted or ERR if not
         {
 
-            bufferErr = recvFunctBasic(client_socket);
+            bufferErr = basicSocketFunctions().recvFunctBasic(client_socket);
             if (bufferErr.err == -1)
             {
                 close(client_socket);
@@ -312,7 +260,7 @@ void handle_client(int client_socket, std::string dataLocal)
             std::string OK = "OK";
             send(client_socket, OK.c_str(), OK.size(), 0);
 
-            bufferErr = recvFunctBasic(client_socket);
+            bufferErr = basicSocketFunctions().recvFunctBasic(client_socket);
             if (bufferErr.err == -1)
             {
                 close(client_socket);
@@ -394,7 +342,7 @@ int main(int argc, char *argv[])
 
     sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(port);
 
     if (bind(server_socket, (sockaddr *)&server_addr, sizeof(server_addr)) == -1)

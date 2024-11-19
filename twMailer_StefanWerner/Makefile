@@ -6,7 +6,7 @@ rebuild: clean all
 all: ./bin/server ./bin/client
 
 prepare:
-	mkdir -p obj bin
+	mkdir -p obj bin data .data
 
 clean:
 	clear
@@ -32,6 +32,9 @@ clean:
 ./obj/userInputClass.o: classes/userInputClass.cpp | prepare
 	${CC} ${CFLAGS} -o obj/userInputClass.o classes/userInputClass.cpp -c
 
+./obj/basicSocketFunctions.o: classes/basicSocketFunctions.cpp | prepare
+	${CC} ${CFLAGS} -o obj/basicSocketFunctions.o classes/basicSocketFunctions.cpp -c
+
 ./obj/ldapClass.o: classes/ldapClass.cpp | prepare
 	${CC} ${CFLAGS} -o obj/ldapClass.o classes/ldapClass.cpp -c ${LIBS}
 
@@ -40,8 +43,8 @@ clean:
 	${CC} ${CFLAGS} -o obj/presetStruct.o headers/PresetStruct.cpp -c
 
 # binary
-./bin/server: ./obj/presetStruct.o ./obj/ldapClass.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/server.o | prepare
-	${CC} ${CFLAGS} -o bin/server obj/ldapClass.o obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/server.o ${LIBS}
+./bin/server: ./obj/presetStruct.o ./obj/basicSocketFunctions.o ./obj/ldapClass.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/server.o | prepare
+	${CC} ${CFLAGS} -o bin/server obj/basicSocketFunctions.o obj/ldapClass.o obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/server.o ${LIBS}
 
-./bin/client: ./obj/presetStruct.o ./obj/userInputClass.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/client.o | prepare
-	${CC} ${CFLAGS} -o bin/client obj/userInputClass.o obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/client.o
+./bin/client: ./obj/presetStruct.o ./obj/basicSocketFunctions.o ./obj/userInputClass.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/client.o | prepare
+	${CC} ${CFLAGS} -o bin/client obj/basicSocketFunctions.o obj/userInputClass.o obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/client.o
