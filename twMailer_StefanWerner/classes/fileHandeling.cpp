@@ -97,6 +97,43 @@ std::vector<TEXTpreset> fileHandeling::READ_from_File(std::string local, std::st
     return fileREAD;
 }
 
+int fileHandeling::readLoginFailures(std::string local, std::string username){
+    std::string location = "." + local + "/" + username + ".txt";
+    std::ifstream inFile(location);
+
+    if (inFile.is_open())
+    {
+        std::string line;
+
+        while (getline(inFile, line))
+        {
+            return std::stoi(line);     
+        }
+    }
+    else
+    {
+        std::cout << "Die Datei konnte nicht geöffnet werden.\n";
+    }
+    return 0;
+}
+
+void fileHandeling::SAFE_to_FileLOGIN(std::string local, std::string username, int index)
+{
+    std::ofstream outFile;
+    std::string location = "." + local + "/" + username + ".txt";
+    outFile.open(location, std::ios::app); // Öffnen im Append-Modus
+
+    if (outFile.is_open())
+    {
+        outFile << index;
+        outFile.close();
+    }
+    else
+    {
+        std::cout << "Die Datei konnte nicht geöffnet werden.\n";
+    }
+}
+
 void fileHandeling::SAFE_to_File(std::string local, std::string username, TEXTpreset tp)
 {
     std::ofstream outFile;

@@ -95,21 +95,21 @@ void client_loop(int socket_fd)
         if (input == "LOGIN")
         {
             send(socket_fd, input.c_str(), input.size(), 0);
+            /*
             std::cout << "Enter username: ";
             std::getline(std::cin, username);
             std::cout << "Enter PWD: ";
             std::getline(std::cin, pwd);
-            std::string LOGINstring = username + "\n" + pwd + "\n";
+            */
+            lp = userInputClass().LOGINinput();
+            std::string LOGINstring = lp.username + "\n" + lp.pwd + "\n";
             send(socket_fd, LOGINstring.c_str(), LOGINstring.size(), 0);
             if (RCV_and_PARSE_serverResponse(socket_fd) == "ERR")
             {
                 input = "";
                 std::cout << "You are not Autherized" << std::endl;
-            }
-            else
-            {
-                lp.username = username;
-                lp.pwd = pwd;
+                std::cout << "You may have to wait if you inputed more than 3 incorrect passwords" << std::endl;
+                
             }
         }
     } while (input != "LOGIN");

@@ -10,22 +10,11 @@
 #include <algorithm>
 #include <cmath>
 
-
 #include "headers/PresetStruct.h"
 #include "classes/parseClass.h"
 #include "classes/fileHandeling.h"
 #include "classes/messageClass.h"
-
-/*
-
-LDAP muss noch eingefügt werden und mit login verbunden werden
-
-client 3 time wrong password muss in login noch eingefügtwerden
-
-synchronizted???? keine ahnung was damit gemeint
-sollte passen ? ich weißm nicht was sonst mit synchronization gemeint ist
-
-*/
+#include "classes/ldapClass.h"
 
 #define _BLOCK_SIZE 1024
 
@@ -98,6 +87,7 @@ void handle_client(int client_socket, std::string dataLocal)
 {
     bool isLoggedIn = false;
     LOGINpreset lp;
+    int index = 0;
     do
     {
         std::string buffer = recvQuitLogin(client_socket);
@@ -121,15 +111,32 @@ void handle_client(int client_socket, std::string dataLocal)
 
             lp = parseClass().parseLOGIN(loginString);
 
-            if (lp.username == "stefan")
+            if (fileHandeling().readLoginFailures(dataLocal, lp.username) > 2)
+            {
+                std::cout << "To many Failed attemps!" << std::endl;
+                std::string ERR = "ERR";
+                send(client_socket, ERR.c_str(), ERR.size(), 0);
+                continue;
+            }
+
+            if (ldapClass().connectToLDAP(lp.username, lp.pwd) == 0)
             {
                 std::cout << "Authentic" << std::endl;
                 std::string OK = "OK";
                 send(client_socket, OK.c_str(), OK.size(), 0);
                 isLoggedIn = true;
+                std::string falseInputLocal;
+                falseInputLocal = "." + dataLocal;
+                fileHandeling().clearFile(falseInputLocal, lp.username);
             }
             else
             {
+
+                std::string falseInputLocal;
+                falseInputLocal = "." + dataLocal;
+                fileHandeling().clearFile(falseInputLocal, lp.username);
+                index++;
+                fileHandeling().SAFE_to_FileLOGIN(dataLocal, lp.username, index);
                 std::string ERR = "ERR";
                 send(client_socket, ERR.c_str(), ERR.size(), 0);
             }
@@ -142,8 +149,12 @@ void handle_client(int client_socket, std::string dataLocal)
 
     while (true)
     {
-        recvReturn bufferErr= recvFunctBasic(client_socket);
-        if(bufferErr.err == -1){close(client_socket); break;}
+        recvReturn bufferErr = recvFunctBasic(client_socket);
+        if (bufferErr.err == -1)
+        {
+            close(client_socket);
+            break;
+        }
 
         std::istringstream iss(bufferErr.buffer);
         std::string operation;
@@ -153,8 +164,12 @@ void handle_client(int client_socket, std::string dataLocal)
         {
             std::cout << "SEND" << std::endl;
 
-            bufferErr= recvFunctBasic(client_socket);
-            if(bufferErr.err == -1){close(client_socket); break;}
+            bufferErr = recvFunctBasic(client_socket);
+            if (bufferErr.err == -1)
+            {
+                close(client_socket);
+                break;
+            }
 
             INFOpreset ip = parseClass().parseINFO(bufferErr.buffer);
             std::string OK = "OK";
@@ -169,21 +184,47 @@ void handle_client(int client_socket, std::string dataLocal)
         {
             std::cout << "READ" << std::endl;
 
-            bufferErr= recvFunctBasic(client_socket);
-            if(bufferErr.err == -1){close(client_socket); break;}
+            bufferErr = recvFunctBasic(client_socket);
+            if (bufferErr.err == -1)
+            {
+                close(client_socket);
+                break;
+            }
 
             INFOpreset ip = parseClass().parseINFO(bufferErr.buffer);
 
             std::string OK = "OK";
             send(client_socket, OK.c_str(), OK.size(), 0);
 
-            bufferErr= recvFunctBasic(client_socket);
-            if(bufferErr.err == -1){close(client_socket); break;}
+            bufferErr = recvFunctBasic(client_socket);
+            if (bufferErr.err == -1)
+            {
+                close(client_socket);
+                break;
+            }
 
             std::string id = bufferErr.buffer;
+            int idNUM;
 
             std::vector<TEXTpreset> readFiles = fileHandeling().READ_from_File(dataLocal, lp.username);
-            int idNUM = std::stoi(id);
+            try
+            {
+                idNUM = std::stoi(id);
+            }
+            catch (...)
+            {
+                std::cerr << "ID is not correct" << std::endl;
+                std::string ERR = "ERR";
+                send(client_socket, ERR.c_str(), ERR.size(), 0);
+                continue;
+            }
+
+            if (idNUM >= static_cast<int>(readFiles.size()))
+            {
+                std::string ERR = "ERR";
+                send(client_socket, ERR.c_str(), ERR.size(), 0);
+                continue;
+            }
 
             if (static_cast<int>(readFiles.size()) <= 0)
             {
@@ -193,7 +234,8 @@ void handle_client(int client_socket, std::string dataLocal)
             }
             else
             {
-                if(idNUM > static_cast<int>(readFiles.size()) || idNUM < 0){
+                if (idNUM > static_cast<int>(readFiles.size()) || idNUM < 0)
+                {
                     std::string ERR = "ERR";
                     send(client_socket, ERR.c_str(), ERR.size(), 0);
                     continue;
@@ -258,22 +300,40 @@ void handle_client(int client_socket, std::string dataLocal)
         else if (operation == "DEL")
         {
 
-            bufferErr= recvFunctBasic(client_socket);
-            if(bufferErr.err == -1){close(client_socket); break;}
-
+            bufferErr = recvFunctBasic(client_socket);
+            if (bufferErr.err == -1)
+            {
+                close(client_socket);
+                break;
+            }
 
             parseClass().parseINFO(bufferErr.buffer);
 
             std::string OK = "OK";
             send(client_socket, OK.c_str(), OK.size(), 0);
 
-            bufferErr= recvFunctBasic(client_socket);
-            if(bufferErr.err == -1){close(client_socket); break;}
+            bufferErr = recvFunctBasic(client_socket);
+            if (bufferErr.err == -1)
+            {
+                close(client_socket);
+                break;
+            }
 
             std::string id = bufferErr.buffer;
-
+            int idNUM;
             std::vector<TEXTpreset> readFiles = fileHandeling().READ_from_File(dataLocal, lp.username);
-            int idNUM = std::stoi(id);
+            try
+            {
+                idNUM = std::stoi(id);
+            }
+            catch (...)
+            {
+                std::cerr << "ID is not correct" << std::endl;
+                std::string ERR = "ERR";
+                send(client_socket, ERR.c_str(), ERR.size(), 0);
+                continue;
+            }
+
             if (idNUM <= static_cast<int>(readFiles.size()) && static_cast<int>(readFiles.size()) != 0 && !(idNUM < 0))
             {
                 fileHandeling().clearFile(dataLocal, lp.username);
@@ -290,7 +350,7 @@ void handle_client(int client_socket, std::string dataLocal)
                 }
                 else
                 {
-                    
+
                     std::string OK = "OK";
                     send(client_socket, OK.c_str(), OK.size(), 0);
                 }

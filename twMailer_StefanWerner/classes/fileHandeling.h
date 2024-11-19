@@ -14,6 +14,8 @@ public:
     std::vector<TEXTpreset> READ_from_File(std::string local, std::string username);
     void SAFE_to_File(std::string local, std::string username, TEXTpreset tp);
     void clearFile(std::string local, std::string username);
+    void SAFE_to_FileLOGIN(std::string local, std::string username, int index);
+    int readLoginFailures(std::string local, std::string username);
 private:
 
 };

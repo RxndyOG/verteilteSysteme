@@ -1,5 +1,6 @@
 CC=g++
 CFLAGS=-g -Wall -Wextra -Werror -O -std=c++17 -pthread
+LIBS=-L/usr/local/lib -lldap -llber
 
 rebuild: clean all
 all: ./bin/server ./bin/client
@@ -31,13 +32,16 @@ clean:
 ./obj/userInputClass.o: classes/userInputClass.cpp | prepare
 	${CC} ${CFLAGS} -o obj/userInputClass.o classes/userInputClass.cpp -c
 
+./obj/ldapClass.o: classes/ldapClass.cpp | prepare
+	${CC} ${CFLAGS} -o obj/ldapClass.o classes/ldapClass.cpp -c ${LIBS}
+
 # headers
 ./obj/presetStruct.o: headers/PresetStruct.cpp | prepare
 	${CC} ${CFLAGS} -o obj/presetStruct.o headers/PresetStruct.cpp -c
 
 # binary
-./bin/server: ./obj/presetStruct.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/server.o | prepare
-	${CC} ${CFLAGS} -o bin/server obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/server.o
+./bin/server: ./obj/presetStruct.o ./obj/ldapClass.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/server.o | prepare
+	${CC} ${CFLAGS} -o bin/server obj/ldapClass.o obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/server.o ${LIBS}
 
 ./bin/client: ./obj/presetStruct.o ./obj/userInputClass.o ./obj/messageClass.o ./obj/fileHandeling.o ./obj/parseClass.o ./obj/client.o | prepare
 	${CC} ${CFLAGS} -o bin/client obj/userInputClass.o obj/messageClass.o obj/presetStruct.o obj/fileHandeling.o obj/parseClass.o obj/client.o

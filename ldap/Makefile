@@ -28,11 +28,11 @@ clean:
 	clear
 	rm -f bin/* obj/*
 
-./obj/ldapclient.o: myldap.c
-	${CC} ${CFLAGS} -o obj/ldapclient.o myldap.c -c
+./obj/ldapclient.o: myldap.cpp
+	${CC} ${CFLAGS} -o obj/ldapclient.o myldap.cpp -c
 
-./obj/mypw.o: mypw.c
-	${CC} ${CFLAGS} -o obj/mypw.o mypw.c -c
+./obj/mypw.o: mypw.cpp
+	${CC} ${CFLAGS} -o obj/mypw.o mypw.cpp -c
 
 ./bin/ldapclient: ./obj/ldapclient.o ./obj/mypw.o
 	${CC} ${CFLAGS} -o bin/ldapclient obj/mypw.o obj/ldapclient.o ${LIBS}

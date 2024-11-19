@@ -12,6 +12,7 @@ public:
     ~userInputClass();
     TEXTpreset SENDInput(LOGINpreset lp);
     std::string READInput(LOGINpreset lp);
+    LOGINpreset LOGINinput();
 private:
 
 };

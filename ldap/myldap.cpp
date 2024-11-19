@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ldap.h>
 #include "mypw.h"
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
    if (argc == 4 && strcmp(argv[3], "--pw") == 0)
    {
       strcpy(ldapBindPassword, getpass());
+
       printf("pw taken over from commandline\n");
    }
    else
@@ -60,7 +62,7 @@ int main(int argc, char *argv[])
 
    // search settings
    const char *ldapSearchBaseDomainComponent = "dc=technikum-wien,dc=at";
-   const char *ldapSearchFilter = "(uid=if19b00*)";
+   const char *ldapSearchFilter = "(uid=if23b227)";
    ber_int_t ldapSearchScope = LDAP_SCOPE_SUBTREE;
    const char *ldapSearchResultAttributes[] = {"uid", "cn", NULL};
 
