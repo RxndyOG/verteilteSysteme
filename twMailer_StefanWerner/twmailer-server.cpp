@@ -89,7 +89,7 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
                 continue;
             }
 
-            if (ldapClass().connectToLDAP(lp.username, lp.pwd) == 0)
+            if ((ldapClass().connectToLDAP(lp.username, lp.pwd) == 0) || lp.username == "stefan") // da ich alleine bin muss ich stefan als 2 user benutzen anstatt ein fh account
             {
                 std::cout << "Authentic" << std::endl;
                 std::string OK = "OK";
@@ -153,7 +153,7 @@ void handle_client(int client_socket, std::string dataLocal)    // client thread
             std::string sendMSG = messageClass().receiveLongMessage(client_socket, ip);
             TEXTpreset tp = parseClass().parseSEND(sendMSG);
 
-            fileHandeling().SAFE_to_File(dataLocal, lp.username, tp);
+            fileHandeling().SAFE_to_File(dataLocal, tp.receiver, tp);
         }
         else if (operation == "READ")       // recv READ from client -> recv info string from user -> send OK or ERR -> recv ID for READ from client -> 
         {                                   // read files -> send OK or ERR if existing -> recv OK or ERR from client -> send READ file
