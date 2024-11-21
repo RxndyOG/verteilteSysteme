@@ -13,6 +13,7 @@ struct LOGINpreset
 
 struct TEXTpreset
 {
+    std::string receiver = "";
     std::string sender = "";
     std::string subject = "";
     std::string message = "";

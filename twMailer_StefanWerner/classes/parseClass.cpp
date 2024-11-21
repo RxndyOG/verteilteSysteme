@@ -13,8 +13,8 @@ parseClass::~parseClass()
 
 }
 
-INFOpreset parseClass::parseINFO(std::string infoString)
-{
+INFOpreset parseClass::parseINFO(std::string infoString)   //parsed die info string
+{                                       // TextLength\nPackageNum\n
     INFOpreset ip;
 
     std::string txtLen, nPack;
@@ -26,25 +26,21 @@ INFOpreset parseClass::parseINFO(std::string infoString)
     return ip;
 }
 
-TEXTpreset parseClass::parseSEND(const std::string &sendString)
-{
+TEXTpreset parseClass::parseSEND(const std::string &sendString) // prased den SEND string
+{                                                    // Sender\nSubject\nMessage
     TEXTpreset tp;
     std::istringstream iss(sendString);
     std::string line;
 
-    // Sender auslesen
-    std::getline(iss, tp.sender);
-
-    // Subject auslesen
+    std::getline(iss, tp.receiver);
     std::getline(iss, tp.subject);
 
-    // Restlichen Text als Body zusammenfassen
     tp.message.clear();
     while (std::getline(iss, line))
     {
         if (!tp.message.empty())
         {
-            tp.message += "\n"; // Text wieder mit Zeilenumbruch trennen
+            tp.message += "\n"; 
         }
         tp.message += line;
     }
@@ -52,16 +48,16 @@ TEXTpreset parseClass::parseSEND(const std::string &sendString)
     return tp;
 }
 
-LOGINpreset parseClass::parseLOGIN(std::string loginString)
-{
+LOGINpreset parseClass::parseLOGIN(std::string loginString) //parsed den LOGIN string
+{                                       // Username\nPassword\n
     LOGINpreset lp;
-    // Variablen für username und pwd
+
     std::string username, pwd;
-    // Stringstream zum Parsen verwenden
+
     std::istringstream iss(loginString);
-    // Zeilenweise lesen
-    std::getline(iss, username); // Liest die erste Zeile
-    std::getline(iss, pwd);      // Liest die zweite Zeile
+
+    std::getline(iss, username); 
+    std::getline(iss, pwd);      
 
     lp.username = username;
     lp.pwd = pwd;

@@ -14,7 +14,7 @@ userInputClass::~userInputClass()
 {
 }
 
-std::string getPassword() {
+std::string getPassword() {     // fragt den user nach dem password
     std::string password;
     char ch;
     struct termios oldt, newt;
@@ -69,6 +69,8 @@ TEXTpreset userInputClass::SENDInput(LOGINpreset lp)
     std::cout << "sender: ";
     tp.sender = lp.username;
     std::cout << tp.sender << std::endl;
+    std::cout << "Receiver: ";
+    std::getline(std::cin, tp.receiver);
     do
     {
         std::cout << "subject (Max: 80 chars): ";

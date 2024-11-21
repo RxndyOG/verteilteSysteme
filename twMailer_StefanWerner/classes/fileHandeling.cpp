@@ -14,9 +14,9 @@ fileHandeling::~fileHandeling()
 
 }
 
-void fileHandeling::clearFile(std::string local, std::string username) {
+void fileHandeling::clearFile(std::string local, std::string username) {        // löscht die data file oder .data
     std::string filename = local + "/" + username + ".txt";
-    std::ofstream file(filename, std::ios::out); // Öffnet die Datei im Schreibmodus und überschreibt den Inhalt
+    std::ofstream file(filename, std::ios::out); 
     if (file.is_open()) {
         std::cout << "Die Datei \"" << filename << "\" wurde erfolgreich geleert.\n";
         file.close();
@@ -25,7 +25,7 @@ void fileHandeling::clearFile(std::string local, std::string username) {
     }
 }
 
-std::vector<TEXTpreset> fileHandeling::READ_from_File(std::string local, std::string username)
+std::vector<TEXTpreset> fileHandeling::READ_from_File(std::string local, std::string username) // ließt die data file für messages
 {
     std::string location = local + "/" + username + ".txt";
     std::ifstream inFile(location);
@@ -35,52 +35,48 @@ std::vector<TEXTpreset> fileHandeling::READ_from_File(std::string local, std::st
     if (inFile.is_open())
     {
         std::string line;
-        int i = 0;  // Zähler, der bei jedem [break] zurückgesetzt wird
+        int i = 0;  
         TEXTpreset tp;
 
         while (getline(inFile, line))
         {
-            // Entferne möglichen Wagenrücklauf (\r) von Windows-Zeilenumbrüchen
+           
             line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
 
-            // Ignoriere Leerzeilen
+        
             if (line.empty())
             {
                 continue;
             }
 
-            // Trennen der Nachrichten, wenn der Trennmarker erreicht wird
+            
             if (line == "[break/$TEXT$/$LOCAL$]")
             {
-                // Füge die Nachricht zur Liste hinzu, nur wenn sie nicht leer ist
+              
                 if (!tp.message.empty())
                 {
                     fileREAD.push_back(tp);
                 }
-                tp = TEXTpreset();  // Zurücksetzen für die nächste Nachricht
-                i = 0;              // Zähler zurücksetzen
+                tp = TEXTpreset();  
+                i = 0;              
                 continue;
             }
             else if (i == 0)
             {
-                // Die erste Zeile ist der Sender
-                tp.sender = line;
+                tp.receiver = line;
             }
             else if (i == 1)
             {
-                // Die zweite Zeile ist der Betreff (Subject)
                 tp.subject = line;
             }
             else if (i >= 2)
             {
-                // Alle weiteren Zeilen sind Teil der Nachricht (Message)
-                tp.message.append(line + "\n"); // An die Nachricht anhängen
+                tp.message.append(line + "\n"); 
             }
 
-            i++; // Zähler erhöhen
+            i++; 
         }
 
-        // Falls am Ende keine Trennung mehr kam, aber eine Nachricht existiert
         if (!tp.message.empty())
         {
             fileREAD.push_back(tp);
@@ -97,7 +93,7 @@ std::vector<TEXTpreset> fileHandeling::READ_from_File(std::string local, std::st
     return fileREAD;
 }
 
-int fileHandeling::readLoginFailures(std::string local, std::string username){
+int fileHandeling::readLoginFailures(std::string local, std::string username){ // ließt den integer in .data für die falsche eingabe
     std::string location = "." + local + "/" + username + ".txt";
     std::ifstream inFile(location);
 
@@ -117,11 +113,11 @@ int fileHandeling::readLoginFailures(std::string local, std::string username){
     return 0;
 }
 
-void fileHandeling::SAFE_to_FileLOGIN(std::string local, std::string username, int index)
+void fileHandeling::SAFE_to_FileLOGIN(std::string local, std::string username, int index) // speichert failed attempts
 {
     std::ofstream outFile;
     std::string location = "." + local + "/" + username + ".txt";
-    outFile.open(location, std::ios::app); // Öffnen im Append-Modus
+    outFile.open(location, std::ios::app); 
 
     if (outFile.is_open())
     {
@@ -134,17 +130,17 @@ void fileHandeling::SAFE_to_FileLOGIN(std::string local, std::string username, i
     }
 }
 
-void fileHandeling::SAFE_to_File(std::string local, std::string username, TEXTpreset tp)
+void fileHandeling::SAFE_to_File(std::string local, std::string username, TEXTpreset tp)    //speichwert den sender das subject und die message
 {
     std::ofstream outFile;
     std::string location = local + "/" + username + ".txt";
-    outFile.open(location, std::ios::app); // Öffnen im Append-Modus
+    outFile.open(location, std::ios::app); 
 
     if (outFile.is_open())
     {
-        outFile << tp.sender << "\n";
+        outFile << tp.receiver << "\n";
         outFile << tp.subject << "\n";
-        outFile << tp.message;
+        outFile << tp.message << "\n";
         outFile << "[break/$TEXT$/$LOCAL$]\n";
         outFile.close();
         std::cout << "Text wurde hinzugefügt.\n";

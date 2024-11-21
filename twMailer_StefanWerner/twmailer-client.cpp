@@ -22,7 +22,7 @@ bool isTimedOut = false;
 int cSocket;
 
 void handleSigint(int sig) {
-    (void) sig;  // Kennzeichne 'sig' als nicht verwendet
+    (void) sig; 
     std::string quit = "QUIT";
     send(cSocket, quit.c_str(), quit.size(), 0);
     std::cout << "Closed connection" << std::endl; 
@@ -166,9 +166,10 @@ void client_loop(int socket_fd) // client app
 
             INFOpreset ip = parseClass().parseINFO(bufferErr.buffer);
             std::string sendMSG = messageClass().receiveLongMessage(socket_fd, ip);
+
             TEXTpreset tp = parseClass().parseSEND(sendMSG);
 
-            std::cout << "Sender:  " << tp.sender << std::endl;
+            std::cout << "Receiver: " << tp.receiver << std::endl;
             std::cout << "Subject: " << tp.subject << std::endl;
             std::cout << "Message: " << tp.message << std::endl;
 
@@ -238,7 +239,7 @@ void client_loop(int socket_fd) // client app
                 TEXTpreset tp = parseClass().parseSEND(receivedMsg);
                 std::cout << " -------------------- " << std::endl;
                 std::cout << "ID: " << i << std::endl;
-                std::cout << "sender: " << tp.sender << std::endl;
+                std::cout << "Receiver: " << tp.receiver << std::endl;
                 std::cout << "subject: " << tp.subject << std::endl;
                 i++;
             }
@@ -267,6 +268,8 @@ void client_loop(int socket_fd) // client app
                 std::cout << "Error in DEL" << std::endl;
                 std::cout << "Index out of range or no file existing" << std::endl;
                 continue;
+            }else{
+                std::cout << "Message deleted" << std::endl;
             }
             continue;
         }

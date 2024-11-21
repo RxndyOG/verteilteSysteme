@@ -27,7 +27,7 @@ std::vector<std::string> splitString(const std::string& input, int textLength) {
 }
 
 void messageClass::sendLongMessage(TEXTpreset tp, INFOpreset ip, int socket_fd) {
-    std::string fullMessage = tp.sender + "\n" + tp.subject + "\n" + tp.message + "\n";
+    std::string fullMessage = tp.receiver + "\n" + tp.subject + "\n" + tp.message + "\n";
     
     std::vector<std::string> blocks = splitString(fullMessage, ip.textLength);
 

@@ -38,7 +38,7 @@ INFOpreset basicSocketFunctions::SEND_and_CALC_infoString(TEXTpreset tp, int soc
 {
     std::string infoString = "";
     INFOpreset ip;
-    ip.textLength = tp.sender.size() + 1 + tp.subject.size() + 1 + tp.message.size() + 1;
+    ip.textLength = tp.receiver.size() + 1 + tp.subject.size() + 1 + tp.message.size() + 1;
     float result = static_cast<float>(ip.textLength) / (_BLOCK_SIZE - 1);
     ip.numPack = std::ceil(result);
     infoString = std::to_string(ip.textLength) + "\n" + std::to_string(ip.numPack) + "\n";
