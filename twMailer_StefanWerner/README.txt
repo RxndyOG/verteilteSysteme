@@ -1,3 +1,8 @@
+// Die messages werden auf dem Server gespeichert man kann 
+// nicht im client messages ablesen die man selbst nicht geschickt hat. 
+// Nur der eigentliche Sender einer Nachricht kann sie Lesen und löschen 
+// (der Fehler der im untericht beschprochen wurde)
+
 // twmailer von STEFAN WERNER
 
 // um das programm zu starten ----------
